@@ -41,12 +41,12 @@ internal class MessagingService
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
-        channel.ExchangeDeclare(exchange: "Invalid", type: ExchangeType.Topic, durable: true);
+        channel.ExchangeDeclare(exchange: "ewebshop", type: ExchangeType.Topic, durable: true);
 
-        var queueName = "Invalid";
+        var queueName = "ewebshop";
 
         channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue: queueName, exchange: "Invalid", routingKey: "Invalid");
+        channel.QueueBind(queue: queueName, exchange: "ewebshop", routingKey: "ewebshop");
 
         channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
         Console.WriteLine("Waiting for messages");
@@ -55,7 +55,7 @@ internal class MessagingService
 
         consumer.Received += ConsumerReceived; 
 
-        channel.BasicConsume(queue: "Invalid",
+        channel.BasicConsume(queue: "ewebshop",
                              autoAck: true,
                              consumer: consumer);
     }
