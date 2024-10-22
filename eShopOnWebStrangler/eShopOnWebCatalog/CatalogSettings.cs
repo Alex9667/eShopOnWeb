@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopWeb;
+﻿namespace eShopOnWebCatalog;
 
 public class CatalogSettings
 {

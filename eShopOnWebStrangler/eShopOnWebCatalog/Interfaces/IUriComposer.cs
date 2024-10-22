@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopWeb.ApplicationCore.Interfaces;
+﻿namespace eShopOnWebCatalog.Interfaces;
 
 public interface IUriComposer
 {
