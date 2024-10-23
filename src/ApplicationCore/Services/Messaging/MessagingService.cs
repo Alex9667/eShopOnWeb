@@ -48,12 +48,12 @@ internal class MessagingService
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
-        channel.ExchangeDeclare(exchange: "ewebshop", type: ExchangeType.Topic, durable: true);
+        channel.ExchangeDeclare(exchange: _messagingService.exchangeName, type: ExchangeType.Topic, durable: true);
 
        
         var body = Encoding.UTF8.GetBytes(message);
 
-        channel.BasicPublish(exchange: "ewebshop",
+        channel.BasicPublish(exchange: _messagingService.exchangeName,
                              routingKey: _routingKey,
                              basicProperties: null,
                              body: body);
