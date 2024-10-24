@@ -1,6 +1,10 @@
-﻿using eShopOnWebCatalog;
+﻿using System.Data.Entity;
+using eShopOnWebCatalog;
+using eShopOnWebCatalog.Data;
+using eShopOnWebCatalog.Infrastructure;
 using eShopOnWebCatalog.Interfaces;
 using eShopOnWebCatalog.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.eShopWeb.PublicApi;
 using Microsoft.OpenApi.Models;
 using MinimalApi.Endpoint.Extensions;
@@ -9,14 +13,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-//builder.Services.AddEndpoints();
-//builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
-//builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
+builder.Services.AddEndpoints();
+builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
 builder.Services.Configure<CatalogSettings>(builder.Configuration);
 var catalogSettings = builder.Configuration.Get<CatalogSettings>() ?? new CatalogSettings();
 builder.Services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));
 //builder.Services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
 //builder.Services.AddScoped<ITokenClaimsService, IdentityTokenClaimService>();
+var connectionstring = builder.Configuration.GetConnectionString("CatalogConnection");
+builder.Services.AddDbContext<CatalogContext>(
+    options => options.UseSqlServer(connectionstring)
+);
 
 var configSection = builder.Configuration.GetRequiredSection(BaseUrlConfiguration.CONFIG_NAME);
 builder.Services.Configure<BaseUrlConfiguration>(configSection);
@@ -73,8 +81,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
 }
 
-app.MapGet("api/health", async context =>
-        await context.Response.WriteAsync("My API is healthy!"))
+app.MapGet("/health", context =>
+        context.Response.WriteAsync("My API is healthy!"))
    .WithName("HealthCheck")
    .WithDisplayName("HealthCheck");
 
