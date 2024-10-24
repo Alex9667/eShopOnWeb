@@ -1,10 +1,12 @@
 ﻿using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
+using Microsoft.eShopWeb.ApplicationCore.Services.Messaging;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
 
 namespace Microsoft.eShopWeb.ApplicationCore.Services;
@@ -35,8 +37,17 @@ public class OrderService : IOrderService
         Guard.Against.Null(basket, nameof(basket));
         Guard.Against.EmptyBasketOnCheckout(basket.Items);
 
+        var Ids = basket.Items.Select(item => item.CatalogItemId).ToArray();
         var catalogItemsSpecification = new CatalogItemsSpecification(basket.Items.Select(item => item.CatalogItemId).ToArray());
         var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
+
+        var _messagingService = MessagingService.messagingService;
+
+        foreach(int id in Ids)
+        {
+            _messagingService.SendMessage(id.ToString(), "catalog");
+            _messagingService.ReceiveMessage("catalog", "catalogResponseQueue");
+        }
 
         var items = basket.Items.Select(basketItem =>
         {

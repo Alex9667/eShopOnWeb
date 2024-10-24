@@ -6,10 +6,32 @@ using RabbitMQ.Client.Events;
 
 public class CatalogMessageService
 {
-    ConnectionFactory factory = new ConnectionFactory
+    ConnectionFactory factory;
+
+    string exchangeName = "";
+
+    CatalogMessageService()
     {
-        HostName = "localhost"
-    };
+        factory = new ConnectionFactory
+        {
+            HostName = "localhost"
+        };
+        exchangeName = "ewebshop";
+
+    }
+    private static CatalogMessageService _messagingService = null;
+
+    public static CatalogMessageService messagingService
+    {
+        get
+        {
+            if (_messagingService == null)
+            {
+                _messagingService = new CatalogMessageService();
+            }
+            return _messagingService;
+        }
+    }
 
     public void SendMessage(string message, string _routingKey)
     {
@@ -17,31 +39,29 @@ public class CatalogMessageService
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
-        channel.ExchangeDeclare(exchange: "ewebshop", type: ExchangeType.Topic, durable: true);
+        channel.ExchangeDeclare(exchange: _messagingService.exchangeName, type: ExchangeType.Topic, durable: true);
 
 
         var body = Encoding.UTF8.GetBytes(message);
 
-        channel.BasicPublish(exchange: "ewebshop",
+        channel.BasicPublish(exchange: _messagingService.exchangeName,
                              routingKey: _routingKey,
                              basicProperties: null,
                              body: body);
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
 
-    public static async Task ReceiveMessage()
+    public static async Task ReceiveMessage(string routingKey, string queueName)
     {
         var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
 
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
-        channel.ExchangeDeclare(exchange: "ewebshop", type: ExchangeType.Topic, durable: true);
-
-        var queueName = "ewebshop";
+        channel.ExchangeDeclare(exchange: _messagingService.exchangeName, type: ExchangeType.Topic, durable: true);
 
         channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue: queueName, exchange: "ewebshop", routingKey: "ewebshop"); //Skal routing key være det samme som queue navn?
+        channel.QueueBind(queue: queueName, exchange: _messagingService.exchangeName, routingKey: routingKey);
 
         channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
         Console.WriteLine("Waiting for messages");

@@ -41,7 +41,7 @@ internal class MessagingService
     }
 
 
-
+    // TODO: Make routingKeys enums
     public void SendMessage(string message, string _routingKey)
     {
 
@@ -60,7 +60,7 @@ internal class MessagingService
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
 
-    public static async Task ReceiveMessage()
+    public async Task ReceiveMessage(string routingKey, string queueName)
     {
         var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync=true };
 
@@ -70,10 +70,8 @@ internal class MessagingService
         
         channel.ExchangeDeclare(exchange: _messagingService.exchangeName, type: ExchangeType.Topic, durable: true);
 
-        var queueName = "ewebshop";
-
         channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue: queueName, exchange: _messagingService.exchangeName, routingKey: "ewebshop");
+        channel.QueueBind(queue: queueName, exchange: _messagingService.exchangeName, routingKey: routingKey);
 
         channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
         Console.WriteLine("Waiting for messages");
@@ -87,7 +85,7 @@ internal class MessagingService
                              consumer: consumer);
     }
 
-    public static async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
+    public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
     {
                 
         var body = ea.Body.ToArray();
