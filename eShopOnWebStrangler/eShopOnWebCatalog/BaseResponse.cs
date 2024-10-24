@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Microsoft.eShopWeb.PublicApi;
+namespace eShopOnWebCatalog;
 
 /// <summary>
 /// Base class used by API responses
@@ -9,7 +9,7 @@ public abstract class BaseResponse : BaseMessage
 {
     public BaseResponse(Guid correlationId) : base()
     {
-        base._correlationId = correlationId;
+        _correlationId = correlationId;
     }
 
     public BaseResponse()

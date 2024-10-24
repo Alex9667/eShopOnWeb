@@ -10,7 +10,7 @@ using Microsoft.eShopWeb.ApplicationCore.Exceptions;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
 using MinimalApi.Endpoint;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+namespace eShopOnWebCatalog.CatalogItemEndpoints;
 
 /// <summary>
 /// Creates a new Catalog Item

@@ -8,13 +8,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using MinimalApi.Endpoint;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+namespace eShopOnWebCatalog.CatalogItemEndpoints;
 
 /// <summary>
 /// Updates a Catalog Item
 /// </summary>
 public class UpdateCatalogItemEndpoint : IEndpoint<IResult, UpdateCatalogItemRequest, IRepository<CatalogItem>>
-{ 
+{
     private readonly IUriComposer _uriComposer;
 
     public UpdateCatalogItemEndpoint(IUriComposer uriComposer)

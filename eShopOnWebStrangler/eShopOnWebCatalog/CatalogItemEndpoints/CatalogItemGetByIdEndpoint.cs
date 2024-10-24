@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using MinimalApi.Endpoint;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+namespace eShopOnWebCatalog.CatalogItemEndpoints;
 
 /// <summary>
 /// Get a Catalog Item by Id

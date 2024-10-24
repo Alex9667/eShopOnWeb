@@ -1,4 +1,6 @@
-﻿namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+﻿using eShopOnWebCatalog;
+
+namespace eShopOnWebCatalog.CatalogItemEndpoints;
 
 public class ListPagedCatalogItemRequest : BaseRequest
 {

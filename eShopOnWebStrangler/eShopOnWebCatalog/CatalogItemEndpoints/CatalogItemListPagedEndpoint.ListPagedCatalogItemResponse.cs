@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using eShopOnWebCatalog;
+using eShopOnWebCatalog.CatalogItemEndpoints;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+namespace eShopOnWebCatalog.CatalogItemEndpoints;
 
 public class ListPagedCatalogItemResponse : BaseResponse
 {

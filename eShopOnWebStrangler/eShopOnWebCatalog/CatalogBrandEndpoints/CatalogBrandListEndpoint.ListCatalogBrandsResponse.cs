@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using eShopOnWebCatalog;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogBrandEndpoints;
+namespace eShopOnWebCatalog.CatalogBrandEndpoints;
 
 public class ListCatalogBrandsResponse : BaseResponse
 {

@@ -8,7 +8,7 @@ using eShopOnWebCatalog.Interfaces;
 using eShopOnWebCatalog.Entities;
 using MinimalApi.Endpoint;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogTypeEndpoints;
+namespace eShopOnWebCatalog.CatalogTypeEndpoints;
 
 /// <summary>
 /// List Catalog Types

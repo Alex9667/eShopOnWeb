@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopWeb.PublicApi;
+﻿namespace eShopOnWebCatalog;
 
 /// <summary>
 /// Base class used by API requests

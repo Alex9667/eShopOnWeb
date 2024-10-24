@@ -1,6 +1,8 @@
 ﻿using System;
+using eShopOnWebCatalog;
+using eShopOnWebCatalog.CatalogItemEndpoints;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+namespace eShopOnWebCatalog.CatalogItemEndpoints;
 
 public class GetByIdCatalogItemResponse : BaseResponse
 {
