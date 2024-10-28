@@ -1,0 +1,55 @@
+{
+  "Routes": [
+    { //catalog-items endpoints with Get, Post and Put
+      "UpstreamHttpMethod": [ "Get", "Post", "Put" ],
+      "UpstreamPathTemplate": "/catalog-items/",
+      "DownstreamPathTemplate": "/api/catalog-items/",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 44391
+        }
+      ]
+    },
+    { //Catalog-items endpoints for a catalogItemId with Get and Delete
+      "UpstreamHttpMethod": [ "Get", "Delete" ],
+      "UpstreamPathTemplate": "/catalog-items/{catalogItemId}/",
+      "DownstreamPathTemplate": "/api/catalog-items/{catalogItemId}/",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 44391
+        }
+      ]
+    },
+    { // Catalog-brands endpoints for Get
+      "UpstreamHttpMethod": [ "Get" ],
+      "UpstreamPathTemplate": "/catalog-brands/",
+      "DownstreamPathTemplate": "/api/catalog-brands",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 44391
+        }
+      ]
+    },
+    { // Catalog-types endpoints for Get
+      "UpstreamHttpMethod": [ "Get" ],
+      "UpstreamPathTemplate": "/catalog-types/",
+      "DownstreamPathTemplate": "/api/catalog-types",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 44391
+        }
+      ]
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://localhost:7471"
+  }
+}
