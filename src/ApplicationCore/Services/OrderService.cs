@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
@@ -42,18 +43,15 @@ public class OrderService : IOrderService
         var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
 
         var _messagingService = MessagingService.messagingService;
+        _messagingService.SendMessage(Ids.ToJson(), "get_catalog");
 
-        foreach(int id in Ids)
-        {
-            _messagingService.SendMessage(id.ToString(), "catalog");
-            _messagingService.ReceiveMessage("catalog", "catalogResponseQueue");
-        }
-
+        var response = await _messagingService.ReceiveMessage("catalog", "catalogResponseQueue");
         var items = basket.Items.Select(basketItem =>
         {
             var catalogItem = catalogItems.First(c => c.Id == basketItem.CatalogItemId);
             var itemOrdered = new CatalogItemOrdered(catalogItem.Id, catalogItem.Name, _uriComposer.ComposePicUri(catalogItem.PictureUri));
             var orderItem = new OrderItem(itemOrdered, basketItem.UnitPrice, basketItem.Quantity);
+
             return orderItem;
         }).ToList();
 
