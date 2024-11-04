@@ -44,13 +44,15 @@ internal class MessagingService
 
 
     // TODO: Make routingKeys enums
-    public void SendMessage(string message, string _routingKey)
+    public void SendMessage(string message, string _routingKey, string queueName)
     {
 
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
         channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: _routingKey);
 
        
         var body = Encoding.UTF8.GetBytes(message);
@@ -107,18 +109,20 @@ public class MessagingServiceRecive
         Console.WriteLine("Waiting for messages");
 
         var consumer = new AsyncEventingBasicConsumer(channel);
+        var latch = new AutoResetEvent(false); 
         consumer.Received += async (model, ea) =>
         {
             var body = ea.Body.ToArray();
             Message = Encoding.UTF8.GetString(body);
-            
-            
+
+            latch.Set();
         };
 
         channel.BasicConsume(queue: queueName,
                              autoAck: true,
                              consumer: consumer);
-        Thread.Sleep(1000);
+        
+        latch.WaitOne();
         return Message;
     }
 }

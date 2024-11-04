@@ -41,26 +41,28 @@ public class OrderService : IOrderService
         Guard.Against.EmptyBasketOnCheckout(basket.Items);
 
         var Ids = basket.Items.Select(item => item.CatalogItemId).ToArray();
-        var catalogItemsSpecification = new CatalogItemsSpecification(basket.Items.Select(item => item.CatalogItemId).ToArray());
-        var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
+        var outIds = Ids.Select(Id => new {Id = Id }).ToJson();
+        //var catalogItemsSpecification = new CatalogItemsSpecification(basket.Items.Select(item => item.CatalogItemId).ToArray());
+        //var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
 
         var _messagingService = new MessagingService();
-        _messagingService.SendMessage(Ids.ToJson(), "get_catalog");
+        _messagingService.SendMessage(outIds, "get_catalog","catalogRequestQueue");
 
         var _messageRevicer = new MessagingServiceRecive();
-        var response = await _messageRevicer.ReceiveMessage("catalog", "catalogResponseQueue");
-        var ResponseItems = JsonSerializer.Deserialize<CatalogItemOrdered[]>(response);
-
+        var response =  _messageRevicer.ReceiveMessage("catalog", "catalogResponseQueue");
+        var ResponseItems = JsonSerializer.Deserialize<CatalogItemOrdered[]>(await response);
 
         var items = basket.Items.Select(basketItem =>
         {
 
             //var catalogItem = catalogItems.First(c => c.Id == basketItem.CatalogItemId);
             //var itemOrdered = new CatalogItemOrdered(catalogItem.Id, catalogItem.Name, _uriComposer.ComposePicUri(catalogItem.PictureUri));
+            
             var itemOrdered = ResponseItems.First(c => c.CatalogItemId == basketItem.CatalogItemId);
             var orderItem = new OrderItem(itemOrdered, basketItem.UnitPrice, basketItem.Quantity);
 
             return orderItem;
+            
         }).ToList();
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
