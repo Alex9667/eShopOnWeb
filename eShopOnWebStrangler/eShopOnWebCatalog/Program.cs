@@ -1,6 +1,7 @@
 ﻿using System.Data.Entity;
 using eShopOnWebCatalog;
 using eShopOnWebCatalog.Data;
+using eShopOnWebCatalog.Entities;
 using eShopOnWebCatalog.Infrastructure;
 using eShopOnWebCatalog.Interfaces;
 using eShopOnWebCatalog.Services;
@@ -15,12 +16,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddEndpoints();
-builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
+builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+
 builder.Services.Configure<CatalogSettings>(builder.Configuration);
+
+builder.Services.AddScoped<IMessagingService, CatalogMessageService>();
+//builder.Services.AddHostedService<CatalogMessageService>();
+
 var catalogSettings = builder.Configuration.Get<CatalogSettings>() ?? new CatalogSettings();
 builder.Services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));
-//builder.Services.AddSingleton<CatalogMessageService>();
+//builder.Services.AddScoped(typeof(IMessagingService),typeof(CatalogMessageService));
 //builder.Services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
 //builder.Services.AddScoped<ITokenClaimsService, IdentityTokenClaimService>();
 var connectionstring = builder.Configuration.GetConnectionString("CatalogConnection");
@@ -75,7 +81,7 @@ builder.Services.AddSwaggerGen();
 //    });
 //});
 var app = builder.Build();
-
+var a  = app.Services;
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -98,8 +104,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-
 app.MapEndpoints();
+
 
 
 app.Run();

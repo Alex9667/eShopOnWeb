@@ -4,7 +4,7 @@ using Ardalis.Specification;
 using eShopOnWebCatalog.Entities;
 
 
-namespace Microsoft.eShopWeb.ApplicationCore.Specifications;
+namespace eShopOnWebCatalog.Specifications;
 
 public class CatalogItemsSpecification : Specification<CatalogItem>
 {

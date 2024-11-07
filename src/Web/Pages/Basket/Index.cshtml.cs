@@ -12,6 +12,7 @@ public class IndexModel : PageModel
 {
     private readonly IBasketService _basketService;
     private readonly IBasketViewModelService _basketViewModelService;
+    //TODO : Replace _itemrepository with api 
     private readonly IRepository<CatalogItem> _itemRepository;
 
     public IndexModel(IBasketService basketService,

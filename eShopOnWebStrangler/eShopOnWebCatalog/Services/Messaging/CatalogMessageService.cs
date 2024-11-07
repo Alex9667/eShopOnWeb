@@ -2,19 +2,25 @@
 
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using eShopOnWebCatalog.Entities;
 using eShopOnWebCatalog.Infrastructure;
+using eShopOnWebCatalog.Specifications;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using eShopOnWebCatalog.Interfaces;
+using System.Threading;
 
-public class CatalogMessageService
+public class CatalogMessageService : IMessagingService /*IHostedService*/ 
 {
     ConnectionFactory factory;
-    EfRepository<CatalogItem> _itemRepository;
+    IRepository<CatalogItem> _itemRepository;
+    CancellationToken _token;
+    Task ListenForMesages;
 
     string exchangeName = "";
 
-    public CatalogMessageService(EfRepository<CatalogItem> itemRepository)
+    public CatalogMessageService(IRepository<CatalogItem> itemRepository)
     {
         factory = new ConnectionFactory
         {
@@ -56,7 +62,7 @@ public class CatalogMessageService
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
 
-    public async Task ReceiveMessage(string routingKey, string queueName)
+    public async Task ReceiveMessage(string routingKey, string queueName = "catalogRequestQueue")
     {
         var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
 
@@ -78,13 +84,47 @@ public class CatalogMessageService
         channel.BasicConsume(queue: "ewebshop",
                              autoAck: true,
                              consumer: consumer);
+        //while (!_token.IsCancellationRequested)
+        //{
+
+        //}
     }
 
-    public static async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
+    public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
     {
         var body = ea.Body.ToArray();
         var message = Encoding.UTF8.GetString(body);
+        MessageObject[] messageObjects;
+        try
+        {
+            messageObjects = JsonSerializer.Deserialize<MessageObject[]>(message);
+            var catalogItemsSpecification = new CatalogItemsSpecification(messageObjects.Select(M => M.ID).ToArray());
+            var catalogitems = await _itemRepository.ListAsync(catalogItemsSpecification);
+            var answer = JsonSerializer.Serialize(catalogitems);
+            SendMessage(answer, "catalog");
+        }
+        catch (JsonException ex)
+        {
+            //TODO: send to invalid message queue
+        }
+
         Console.WriteLine($"Received: {message}");
     }
 
+    //public async Task StartAsync(CancellationToken cancellationToken)
+    //{
+    //    _token = cancellationToken;
+    //    ListenForMesages =  ReceiveMessage("get_catalog");
+    //    await ListenForMesages;
+    //}
+
+    //public Task StopAsync(CancellationToken cancellationToken)
+    //{
+    //    ListenForMesages.Dispose();
+    //    return Task.CompletedTask;
+    //}
+}
+public class MessageObject
+{
+    public int ID { get; set; }
 }
