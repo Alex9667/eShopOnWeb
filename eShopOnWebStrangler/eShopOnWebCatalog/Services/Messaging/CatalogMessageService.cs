@@ -15,8 +15,6 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 {
     ConnectionFactory factory;
     IRepository<CatalogItem> _itemRepository;
-    CancellationToken _token;
-    Task ListenForMesages;
 
     string exchangeName = "";
 
@@ -62,6 +60,7 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
 
+    //TODO: add cancelation token
     public async Task ReceiveMessage(string routingKey, string queueName = "catalogRequestQueue")
     {
         var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
@@ -81,13 +80,9 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 
         consumer.Received += ConsumerReceived;
 
-        channel.BasicConsume(queue: "ewebshop",
+        channel.BasicConsume(queue: queueName,
                              autoAck: true,
                              consumer: consumer);
-        //while (!_token.IsCancellationRequested)
-        //{
-
-        //}
     }
 
     public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)

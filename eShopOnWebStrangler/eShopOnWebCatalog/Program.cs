@@ -23,6 +23,7 @@ builder.Services.Configure<CatalogSettings>(builder.Configuration);
 
 builder.Services.AddScoped<IMessagingService, CatalogMessageService>();
 //builder.Services.AddHostedService<CatalogMessageService>();
+builder.Services.AddHostedService<BackgroundMessegingService>();
 
 var catalogSettings = builder.Configuration.Get<CatalogSettings>() ?? new CatalogSettings();
 builder.Services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));
