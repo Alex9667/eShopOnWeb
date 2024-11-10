@@ -5,7 +5,16 @@ namespace InventoryManagementSystem.Data;
 
 internal class InventoryDbContext : DbContext
 {
-    public DbSet<Inventory> Inventories { get; set; }
+    public DbSet<InventoryModel> Inventories { get; set; }
+
+    public InventoryDbContext()
+    {
+
+    }
+    public InventoryDbContext(DbContextOptions<InventoryDbContext> dbContextOptions)
+    {
+
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

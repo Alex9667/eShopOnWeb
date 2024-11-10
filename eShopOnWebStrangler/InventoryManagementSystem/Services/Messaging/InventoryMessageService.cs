@@ -4,6 +4,8 @@ using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Threading;
+using InventoryManagementSystem.Data;
+using InventoryManagementSystem.Models;
 
 namespace InventoryManagementSystem.Services.Messaging;
 
@@ -11,15 +13,19 @@ internal class InventoryMessageService
 {
     ConnectionFactory factory;
 
+    private InventoryDbContext context;
+
     string exchangeName = "";
 
-    public InventoryMessageService()
+    public InventoryMessageService(InventoryDbContext context)
     {
         factory = new ConnectionFactory
         {
             HostName = "localhost"
         };
-        exchangeName = "inventory";
+        exchangeName = "ewebshop";
+
+        this.context = context;
     }
 
     public void SendMessage(string message, string _routingKey)
@@ -40,7 +46,8 @@ internal class InventoryMessageService
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
 
-    public async Task ReceiveMessage(string routingKey, string queueName = "catalogRequestQueue")
+    //TODO: add cancelation token
+    public async Task ReceiveMessage(string routingKey, string queueName = "inventoryRequestQueue")
     {
         var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
 
@@ -68,8 +75,30 @@ internal class InventoryMessageService
     {
         var body = ea.Body.ToArray();
         var message = Encoding.UTF8.GetString(body);
-        
+        MessageObject[] messageObjects;
+        List<InventoryModel> units = new();
+        try
+        {
+            messageObjects = JsonSerializer.Deserialize<MessageObject[]>(message);
+
+            foreach(var messageObject in messageObjects)
+            {
+                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.ID));
+            }
+
+            var answer = JsonSerializer.Serialize(units);
+
+            SendMessage(answer, "catalog");
+        }
+        catch (JsonException ex)
+        {
+            //TODO: send to invalid message queue
+        }
 
         Console.WriteLine($"Received: {message}");
     }
+}
+public class MessageObject
+{
+    public int ID { get; set; }
 }
