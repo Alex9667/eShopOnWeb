@@ -1,4 +1,5 @@
-﻿using Ardalis.GuardClauses;
+﻿using System.Text.Json.Serialization;
+using Ardalis.GuardClauses;
 
 namespace Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 
@@ -22,7 +23,9 @@ public class CatalogItemOrdered // ValueObject
     #pragma warning disable CS8618 // Required by Entity Framework
     private CatalogItemOrdered() {}
 
+    [JsonPropertyName("Id")]
     public int CatalogItemId { get; private set; }
+    [JsonPropertyName("Name")]
     public string ProductName { get; private set; }
     public string PictureUri { get; private set; }
 }

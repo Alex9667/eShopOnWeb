@@ -15,6 +15,7 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 {
     ConnectionFactory factory;
     IRepository<CatalogItem> _itemRepository;
+    
 
     string exchangeName = "";
 
@@ -61,11 +62,13 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     }
 
     //TODO: add cancelation token
-    public async Task ReceiveMessage(string routingKey, string queueName = "catalogRequestQueue")
+    public async Task ReceiveMessage(string routingKey, string queueName,CancellationToken cancellationToken)
     {
         var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
-
+        
+        
         using var connection = factory.CreateConnection();
+        
         using var channel = connection.CreateModel();
 
         channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
@@ -80,9 +83,15 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 
         consumer.Received += ConsumerReceived;
 
+        
+
         channel.BasicConsume(queue: queueName,
                              autoAck: true,
-                             consumer: consumer);
+                             consumer: consumer) ;
+        cancellationToken.WaitHandle.WaitOne();
+        
+        
+
     }
 
     public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
@@ -93,7 +102,7 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
         try
         {
             messageObjects = JsonSerializer.Deserialize<MessageObject[]>(message);
-            var catalogItemsSpecification = new CatalogItemsSpecification(messageObjects.Select(M => M.ID).ToArray());
+            var catalogItemsSpecification = new CatalogItemsSpecification(messageObjects.Select(M => M.Id).ToArray());
             var catalogitems = await _itemRepository.ListAsync(catalogItemsSpecification);
             var answer = JsonSerializer.Serialize(catalogitems);
             SendMessage(answer, "catalog");
@@ -121,5 +130,5 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 }
 public class MessageObject
 {
-    public int ID { get; set; }
+    public int Id { get; set; }
 }

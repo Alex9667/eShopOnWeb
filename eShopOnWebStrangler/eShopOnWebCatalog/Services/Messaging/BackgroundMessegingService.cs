@@ -16,13 +16,14 @@ public class BackgroundMessegingService : IHostedService
         using (var scope = _serviceProvider.CreateScope())
         {
             var messegingService = scope.ServiceProvider.GetRequiredService<IMessagingService>();
-            ReciveMessage = messegingService.ReceiveMessage("get_catalog", "catalogRequestQueue");
-            await ReciveMessage;
+            ReciveMessage = messegingService.ReceiveMessage("get_catalog", "catalogRequestQueue",cancellationToken);
+            
         }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.WaitHandle.WaitOne();
         ReciveMessage.Dispose();
         return Task.CompletedTask;
     }
