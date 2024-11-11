@@ -63,8 +63,19 @@ internal class InventoryMessageService
         Console.WriteLine("Waiting for messages");
 
         var consumer = new AsyncEventingBasicConsumer(channel);
+        var latch = new AutoResetEvent(false);
+        consumer.Received += async (model, ea) =>
+        {
+            var body = ea.Body.ToArray();
+            var Message = Encoding.UTF8.GetString(body);
 
-        consumer.Received += ConsumerReceived;
+            Console.WriteLine($"Received: {Message}");
+
+            ProcessMessage(Message);
+
+            latch.Set();
+        };
+        //ConsumerReceived;
 
         channel.BasicConsume(queue: queueName,
                              autoAck: true,
@@ -83,7 +94,7 @@ internal class InventoryMessageService
 
             foreach(var messageObject in messageObjects)
             {
-                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.ID));
+                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.ItemId));
             }
 
             var answer = JsonSerializer.Serialize(units);
@@ -97,8 +108,31 @@ internal class InventoryMessageService
 
         Console.WriteLine($"Received: {message}");
     }
+
+    private async Task ProcessMessage(string message)
+    {
+        MessageObject[] messageObjects;
+        List<InventoryModel> units = new();
+        try
+        {
+            messageObjects = JsonSerializer.Deserialize<MessageObject[]>(message);
+
+            foreach (var messageObject in messageObjects)
+            {
+                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.ItemId));
+            }
+
+            var answer = JsonSerializer.Serialize(units);
+
+            SendMessage(answer, "catalog");
+        }
+        catch (JsonException ex)
+        {
+            //TODO: send to invalid message queue
+        }
+    }
 }
 public class MessageObject
 {
-    public int ID { get; set; }
+    public int ItemId { get; set; }
 }
