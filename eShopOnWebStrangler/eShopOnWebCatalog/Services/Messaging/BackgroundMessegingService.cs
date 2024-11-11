@@ -1,4 +1,5 @@
 ﻿
+using System.Threading;
 using eShopOnWebCatalog.Interfaces;
 
 namespace eShopOnWebCatalog.Services.Messaging;
@@ -6,25 +7,30 @@ namespace eShopOnWebCatalog.Services.Messaging;
 public class BackgroundMessegingService : IHostedService
 {
     IServiceProvider _serviceProvider;
-    Task? ReciveMessage;
+    private Timer _timer;
+    //Task? ReciveMessage;
     public BackgroundMessegingService(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _timer = new Timer(ReadMesseges, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        return Task.CompletedTask;
+    }
+    public async void ReadMesseges(object? state)
     {
         using (var scope = _serviceProvider.CreateScope())
         {
             var messegingService = scope.ServiceProvider.GetRequiredService<IMessagingService>();
-            ReciveMessage = messegingService.ReceiveMessage("get_catalog", "catalogRequestQueue",cancellationToken);
-            
+            await messegingService.ReceiveMessage("get_catalog", "catalogRequestQueue");
         }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        cancellationToken.WaitHandle.WaitOne();
-        ReciveMessage.Dispose();
+        _timer.Dispose();
+        //ReciveMessage.Dispose();
         return Task.CompletedTask;
     }
 }

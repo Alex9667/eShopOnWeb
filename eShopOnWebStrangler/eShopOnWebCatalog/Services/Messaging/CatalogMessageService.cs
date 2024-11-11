@@ -13,7 +13,7 @@ using System.Threading;
 
 public class CatalogMessageService : IMessagingService /*IHostedService*/ 
 {
-    ConnectionFactory factory;
+    //ConnectionFactory factory;
     IRepository<CatalogItem> _itemRepository;
     
 
@@ -21,10 +21,10 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 
     public CatalogMessageService(IRepository<CatalogItem> itemRepository)
     {
-        factory = new ConnectionFactory
-        {
-            HostName = "localhost"
-        };
+        //factory = new ConnectionFactory
+        //{
+        //    HostName = "localhost"
+        //};
         exchangeName = "ewebshop";
         _itemRepository = itemRepository;
 
@@ -45,7 +45,7 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 
     public void SendMessage(string message, string _routingKey)
     {
-
+        var factory = new ConnectionFactory {HostName = "localhost" };
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
@@ -62,10 +62,11 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     }
 
     //TODO: add cancelation token
-    public async Task ReceiveMessage(string routingKey, string queueName,CancellationToken cancellationToken)
+    public async Task ReceiveMessage(string routingKey, string queueName)
     {
-        var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
         
+        var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
+    
         
         using var connection = factory.CreateConnection();
         
@@ -83,14 +84,11 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 
         consumer.Received += ConsumerReceived;
 
-        
-
         channel.BasicConsume(queue: queueName,
                              autoAck: true,
-                             consumer: consumer) ;
-        cancellationToken.WaitHandle.WaitOne();
-        
-        
+                             consumer: consumer);
+        Thread.Sleep(100);
+       
 
     }
 
