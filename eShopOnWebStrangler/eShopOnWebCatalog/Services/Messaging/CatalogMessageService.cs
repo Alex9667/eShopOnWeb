@@ -1,131 +1,101 @@
-﻿namespace eShopOnWebCatalog.Services.Messaging;
-
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
-using eShopOnWebCatalog.Entities;
-using eShopOnWebCatalog.Infrastructure;
-using eShopOnWebCatalog.Specifications;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using eShopOnWebCatalog.Interfaces;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using eShopOnWebCatalog.Interfaces;
+using eShopOnWebCatalog.Entities;
+using eShopOnWebCatalog.Specifications;
 
-public class CatalogMessageService : IMessagingService /*IHostedService*/ 
+namespace eShopOnWebCatalog.Services.Messaging;
+
+public class CatalogMessageService : BackgroundService
 {
-    //ConnectionFactory factory;
-    IRepository<CatalogItem> _itemRepository;
-    
+    //private readonly IRepository<CatalogItem> _itemRepository;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly string _exchangeName = "ewebshop";
+    private IConnection _connection;
+    private IModel _channel;
 
-    string exchangeName = "";
-
-    public CatalogMessageService(IRepository<CatalogItem> itemRepository)
+    public CatalogMessageService(/*IRepository<CatalogItem> itemRepository*/IServiceProvider serviceProvider)
     {
-        //factory = new ConnectionFactory
-        //{
-        //    HostName = "localhost"
-        //};
-        exchangeName = "ewebshop";
-        _itemRepository = itemRepository;
-
-    }
-    //private static CatalogMessageService _messagingService = null;
-
-    //public static CatalogMessageService messagingService
-    //{
-    //    get
-    //    {
-    //        if (_messagingService == null)
-    //        {
-    //            _messagingService = new CatalogMessageService();
-    //        }
-    //        return _messagingService;
-    //    }
-    //}
-
-    public void SendMessage(string message, string _routingKey)
-    {
-        var factory = new ConnectionFactory {HostName = "localhost" };
-        using var connection = factory.CreateConnection();
-        using var channel = connection.CreateModel();
-
-        channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
-
-
-        var body = Encoding.UTF8.GetBytes(message);
-
-        channel.BasicPublish(exchange: exchangeName,
-                             routingKey: _routingKey,
-                             basicProperties: null,
-                             body: body);
-        Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
+        //_itemRepository = itemRepository;
+        _serviceProvider = serviceProvider;
+        InitializeRabbitMQ();
     }
 
-    //TODO: add cancelation token
-    public async Task ReceiveMessage(string routingKey, string queueName)
+    private void InitializeRabbitMQ()
     {
-        
         var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
-    
-        
-        using var connection = factory.CreateConnection();
-        
-        using var channel = connection.CreateModel();
+        _connection = factory.CreateConnection();
+        _channel = _connection.CreateModel();
+        _channel.ExchangeDeclare(exchange: _exchangeName, type: ExchangeType.Topic, durable: true);
+    }
 
-        channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        stoppingToken.ThrowIfCancellationRequested();
 
-        channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: routingKey);
+        string queueName = "catalogRequestQueue";
+        string routingKey = "get_catalog";
 
-        channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
-        Console.WriteLine("Waiting for messages");
+        _channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        _channel.QueueBind(queue: queueName, exchange: _exchangeName, routingKey: routingKey);
+        _channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
-        var consumer = new AsyncEventingBasicConsumer(channel);
-
+        var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.Received += ConsumerReceived;
 
-        channel.BasicConsume(queue: queueName,
-                             autoAck: true,
-                             consumer: consumer);
-        Thread.Sleep(100);
-       
+        _channel.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
 
+        Console.WriteLine("Waiting for messages...");
+
+        await Task.CompletedTask;
     }
 
-    public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
+    private async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
     {
         var body = ea.Body.ToArray();
         var message = Encoding.UTF8.GetString(body);
-        MessageObject[] messageObjects;
-        try
-        {
-            messageObjects = JsonSerializer.Deserialize<MessageObject[]>(message);
-            var catalogItemsSpecification = new CatalogItemsSpecification(messageObjects.Select(M => M.Id).ToArray());
-            var catalogitems = await _itemRepository.ListAsync(catalogItemsSpecification);
-            var answer = JsonSerializer.Serialize(catalogitems);
-            SendMessage(answer, "catalog");
-        }
-        catch (JsonException ex)
-        {
-            //TODO: send to invalid message queue
-        }
-
         Console.WriteLine($"Received: {message}");
+
+        using (var scope = _serviceProvider.CreateScope())
+        {
+            var itemRepository = scope.ServiceProvider.GetRequiredService<IRepository<CatalogItem>>();
+            try
+            {
+                var messageObjects = JsonSerializer.Deserialize<MessageObject[]>(message);
+                var catalogItemsSpecification = new CatalogItemsSpecification(messageObjects.Select(m => m.Id).ToArray());
+                var catalogItems = await itemRepository.ListAsync(catalogItemsSpecification);
+                var responseMessage = JsonSerializer.Serialize(catalogItems);
+
+                SendMessage(responseMessage, "catalog");
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"JSON parsing error: {ex.Message}");
+                // Send to an invalid message queue or log appropriately
+            }
+        }
     }
 
-    //public async Task StartAsync(CancellationToken cancellationToken)
-    //{
-    //    _token = cancellationToken;
-    //    ListenForMesages =  ReceiveMessage("get_catalog");
-    //    await ListenForMesages;
-    //}
+    public void SendMessage(string message, string routingKey)
+    {
+        var body = Encoding.UTF8.GetBytes(message);
+        _channel.BasicPublish(exchange: _exchangeName, routingKey: routingKey, basicProperties: null, body: body);
+        Console.WriteLine($"[x] Sent '{routingKey}':'{message}'");
+    }
 
-    //public Task StopAsync(CancellationToken cancellationToken)
-    //{
-    //    ListenForMesages.Dispose();
-    //    return Task.CompletedTask;
-    //}
+    public override void Dispose()
+    {
+        _channel?.Close();
+        _connection?.Close();
+        base.Dispose();
+    }
 }
+
 public class MessageObject
 {
     public int Id { get; set; }
