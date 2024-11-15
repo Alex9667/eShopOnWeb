@@ -51,7 +51,7 @@
     <PackageVersion Include="NSubstitute" Version="5.1.0" />
     <PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.17" />
     <PackageVersion Include="Ocelot" Version="23.3.4" />
-    <PackageVersion Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageVersion Include="RabbitMQ.Client" Version="7.0.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="6.9.0" />
     <PackageVersion Include="System.Net.Http.Json" Version="$(SystemExtensionVersion)" />
     <PackageVersion Include="System.Security.Claims" Version="4.3.0" />
