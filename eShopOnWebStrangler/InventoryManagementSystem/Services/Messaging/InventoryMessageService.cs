@@ -28,20 +28,19 @@ internal class InventoryMessageService
         this.context = context;
     }
 
-    public void SendMessage(string message, string _routingKey)
+    public async Task SendMessage(string message, string _routingKey)
     {
 
-        using var connection = factory.CreateConnection();
-        using var channel = connection.CreateModel();
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
 
-        channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
 
 
         var body = Encoding.UTF8.GetBytes(message);
 
-        channel.BasicPublish(exchange: exchangeName,
+        await channel.BasicPublishAsync(exchange: exchangeName,
                              routingKey: _routingKey,
-                             basicProperties: null,
                              body: body);
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
@@ -49,37 +48,39 @@ internal class InventoryMessageService
     //TODO: add cancelation token
     public async Task ReceiveMessage(string routingKey, string queueName = "inventoryRequestQueue")
     {
-        var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
+        var factory = new ConnectionFactory { HostName = "localhost"/*, DispatchConsumersAsync = true*/ };
 
-        using var connection = factory.CreateConnection();
-        using var channel = connection.CreateModel();
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
 
-        channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
 
-        channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: routingKey);
+        await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        await channel.QueueBindAsync(queue: queueName, exchange: exchangeName, routingKey: routingKey);
 
-        channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
-        Console.WriteLine("Waiting for messages");
+        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
+
+        //Console.WriteLine("Waiting for messages");
 
         var consumer = new AsyncEventingBasicConsumer(channel);
         var latch = new AutoResetEvent(false);
-        consumer.Received += async (model, ea) =>
+        consumer.ReceivedAsync += async (model, ea) =>
         {
             var body = ea.Body.ToArray();
             var Message = Encoding.UTF8.GetString(body);
 
             Console.WriteLine($"Received: {Message}");
 
-            ProcessMessage(Message);
+            await ProcessMessage(Message);
 
             latch.Set();
         };
         //ConsumerReceived;
 
-        channel.BasicConsume(queue: queueName,
+        await channel.BasicConsumeAsync(queue: queueName,
                              autoAck: true,
                              consumer: consumer);
+        await ReceiveMessage(routingKey, queueName);
     }
 
     public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
@@ -99,7 +100,7 @@ internal class InventoryMessageService
 
             var answer = JsonSerializer.Serialize(units);
 
-            SendMessage(answer, "catalog");
+            await SendMessage(answer, "catalog");
         }
         catch (JsonException ex)
         {
@@ -124,7 +125,7 @@ internal class InventoryMessageService
 
             var answer = JsonSerializer.Serialize(units);
 
-            SendMessage(answer, "catalog");
+            await SendMessage(answer, "catalog");
         }
         catch (JsonException ex)
         {

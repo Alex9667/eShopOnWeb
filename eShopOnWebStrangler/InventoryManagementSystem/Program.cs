@@ -33,7 +33,9 @@ using (var context = new InventoryDbContext())
 InventoryMessageService messageService = new(new InventoryDbContext());
 
 Console.WriteLine("Ready");
+_ = Task.Run(() => messageService.ReceiveMessage("inventory", "inventoryRequestQueue"));
+//await messageService.ReceiveMessage("inventory", "inventoryRequestQueue");
 
-await messageService.ReceiveMessage("inventory", "inventoryRequestQueue");
-
+Console.WriteLine("YOOOO");
 Console.ReadLine();
+
