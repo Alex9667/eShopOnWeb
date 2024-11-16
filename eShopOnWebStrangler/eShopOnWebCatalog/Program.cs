@@ -34,6 +34,8 @@ var connectionstring = builder.Configuration.GetConnectionString("CatalogConnect
 builder.Services.AddDbContext<CatalogContext>(
     options => options.UseSqlServer(connectionstring)
 );
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("LocalCatalogConnection")));
 
 var configSection = builder.Configuration.GetRequiredSection(BaseUrlConfiguration.CONFIG_NAME);
 builder.Services.Configure<BaseUrlConfiguration>(configSection);
