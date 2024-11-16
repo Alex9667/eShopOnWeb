@@ -80,34 +80,8 @@ internal class InventoryMessageService
         await channel.BasicConsumeAsync(queue: queueName,
                              autoAck: true,
                              consumer: consumer);
-        await ReceiveMessage(routingKey, queueName);
-    }
 
-    public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
-    {
-        var body = ea.Body.ToArray();
-        var message = Encoding.UTF8.GetString(body);
-        MessageObject[] messageObjects;
-        List<InventoryModel> units = new();
-        try
-        {
-            messageObjects = JsonSerializer.Deserialize<MessageObject[]>(message);
-
-            foreach(var messageObject in messageObjects)
-            {
-                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.ItemId));
-            }
-
-            var answer = JsonSerializer.Serialize(units);
-
-            await SendMessage(answer, "catalog");
-        }
-        catch (JsonException ex)
-        {
-            //TODO: send to invalid message queue
-        }
-
-        Console.WriteLine($"Received: {message}");
+        Console.ReadKey();
     }
 
     private async Task ProcessMessage(string message)
@@ -125,7 +99,7 @@ internal class InventoryMessageService
 
             var answer = JsonSerializer.Serialize(units);
 
-            await SendMessage(answer, "catalog");
+            await SendMessage(answer, "inventory_amount");
         }
         catch (JsonException ex)
         {
