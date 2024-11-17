@@ -28,13 +28,15 @@ internal class InventoryMessageService
         this.context = context;
     }
 
-    public async Task SendMessage(string message, string _routingKey)
+    public async Task SendMessage(string message, string _routingKey, string sendQueueName)
     {
 
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
 
         await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        await channel.QueueDeclareAsync(queue: sendQueueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        await channel.QueueBindAsync(queue: sendQueueName, exchange: exchangeName, routingKey: _routingKey);
 
 
         var body = Encoding.UTF8.GetBytes(message);
@@ -46,7 +48,7 @@ internal class InventoryMessageService
     }
 
     //TODO: add cancelation token
-    public async Task ReceiveMessage(string routingKey, string queueName = "inventoryRequestQueue")
+    public async Task ReceiveMessage(string routingKey, string sendQueueName, string queueName = "inventoryRequestQueue")
     {
         var factory = new ConnectionFactory { HostName = "localhost"/*, DispatchConsumersAsync = true*/ };
 
@@ -71,7 +73,7 @@ internal class InventoryMessageService
 
             Console.WriteLine($"Received: {Message}");
 
-            await ProcessMessage(Message);
+            await ProcessMessage(Message, sendQueueName);
 
             latch.Set();
         };
@@ -84,7 +86,7 @@ internal class InventoryMessageService
         Console.ReadKey();
     }
 
-    private async Task ProcessMessage(string message)
+    private async Task ProcessMessage(string message, string sendQueueName)
     {
         MessageObject[] messageObjects;
         List<InventoryModel> units = new();
@@ -99,7 +101,7 @@ internal class InventoryMessageService
 
             var answer = JsonSerializer.Serialize(units);
 
-            await SendMessage(answer, "inventory_amount");
+            await SendMessage(answer, "inventory_amount", sendQueueName);
         }
         catch (JsonException ex)
         {

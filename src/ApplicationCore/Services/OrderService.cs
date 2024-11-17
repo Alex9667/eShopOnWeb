@@ -67,7 +67,7 @@ public class OrderService : IOrderService
 
 
         await _messagingService.SendMessage(outIds, "inventory", "inventoryRequestQueue");
-        var inventoryAnswer = _messageRevicer.ReceiveMessage("catalog", "inventoryRequestQueue");
+        var inventoryAnswer = _messageRevicer.ReceiveMessage("inventory_amount", "inventoryResponseQueue");
 
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
