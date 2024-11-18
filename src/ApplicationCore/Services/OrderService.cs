@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -69,9 +71,51 @@ public class OrderService : IOrderService
         await _messagingService.SendMessage(outIds, "inventory", "inventoryRequestQueue");
         var inventoryAnswer = _messageRevicer.ReceiveMessage("inventory_amount", "inventoryResponseQueue");
 
+        bool hasEnoughStock = true;
 
-        var order = new Order(basket.BuyerId, shippingAddress, items);
 
-        await _orderRepository.AddAsync(order);
+        if (inventoryAnswer != null)
+        {
+            List<InventoryModel> inventoryAmounts = new(JsonSerializer.Deserialize<InventoryModel[]>(await inventoryAnswer));
+            var basketItems = basket.Items;
+
+            foreach (var item in basketItems)
+            {
+                var currentItemId = item.CatalogItemId;
+                var currentItemQuantity = item.Quantity;
+
+                foreach (var inventoryModel in inventoryAmounts)
+                {
+                    if(inventoryModel.ItemId == currentItemId)
+                    {
+                        if(inventoryModel.Units < currentItemQuantity)
+                        {
+                            hasEnoughStock = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (hasEnoughStock)
+        {
+            var order = new Order(basket.BuyerId, shippingAddress, items);
+
+            await _orderRepository.AddAsync(order);
+        }
+    }
+}
+
+public class InventoryModel
+{
+    public int ItemId { get; set; }
+    public int Units { get; set; }
+    public int ReservedUnits { get; set; }
+
+    public InventoryModel(int itemId, int units, int reservedUnits)
+    {
+        ItemId = itemId;
+        Units = units;
+        ReservedUnits = reservedUnits;
     }
 }
