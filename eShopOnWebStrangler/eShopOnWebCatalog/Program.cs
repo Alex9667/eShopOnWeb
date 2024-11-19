@@ -1,6 +1,7 @@
 ﻿using System.Data.Entity;
 using eShopOnWebCatalog;
 using eShopOnWebCatalog.Data;
+using eShopOnWebCatalog.Models;
 using eShopOnWebCatalog.Entities;
 using eShopOnWebCatalog.Infrastructure;
 using eShopOnWebCatalog.Interfaces;
@@ -22,14 +23,11 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.Configure<CatalogSettings>(builder.Configuration);
 
 builder.Services.AddScoped<IMessagingService, CatalogMessageService>();
-//builder.Services.AddHostedService<CatalogMessageService>();
 builder.Services.AddHostedService<BackgroundMessegingService>();
 
 var catalogSettings = builder.Configuration.Get<CatalogSettings>() ?? new CatalogSettings();
 builder.Services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));
-//builder.Services.AddScoped(typeof(IMessagingService),typeof(CatalogMessageService));
-//builder.Services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
-//builder.Services.AddScoped<ITokenClaimsService, IdentityTokenClaimService>();
+
 var connectionstring = builder.Configuration.GetConnectionString("CatalogConnection");
 builder.Services.AddDbContext<CatalogContext>(
     options => options.UseSqlServer(connectionstring)
@@ -48,43 +46,35 @@ builder.Configuration.AddEnvironmentVariables();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-//builder.Services.AddSwaggerGen(c =>
-//{
-//    c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-//    c.EnableAnnotations();
-//    c.SchemaFilter<CustomSchemaFilters>();
-//    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-//    {
-//        Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
-//                      Enter 'Bearer' [space] and then your token in the text input below.
-//                      \r\n\r\nExample: 'Bearer 12345abcdef'",
-//        Name = "Authorization",
-//        In = ParameterLocation.Header,
-//        Type = SecuritySchemeType.ApiKey,
-//        Scheme = "Bearer"
-//    });
 
-//    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
-//    {
-//        {
-//            new OpenApiSecurityScheme
-//            {
-//                Reference = new OpenApiReference
-//                {
-//                    Type = ReferenceType.SecurityScheme,
-//                    Id = "Bearer"
-//                },
-//                Scheme = "oauth2",
-//                Name = "Bearer",
-//                In = ParameterLocation.Header,
-
-//            },
-//            new List<string>()
-//        }
-//    });
-//});
 var app = builder.Build();
-var a  = app.Services;
+
+// Database Initialization Logic
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    try
+    {
+        var catalogContext = services.GetRequiredService<CatalogContext>();
+        catalogContext.Database.Migrate();
+
+        var applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
+        applicationDbContext.Database.Migrate();
+
+        // Call the initializer to seed data
+        DbInitializer.Initialize(applicationDbContext);
+
+        Console.WriteLine("Databases initialized successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred while initializing the database: {ex.Message}");
+        throw;
+    }
+}
+
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -108,7 +98,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapEndpoints();
-
-
 
 app.Run();
