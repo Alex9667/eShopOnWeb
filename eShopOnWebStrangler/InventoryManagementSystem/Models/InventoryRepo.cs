@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using InventoryManagementSystem.Data;
+using InventoryManagementSystem.Services.Messaging;
 
 namespace InventoryManagementSystem.Models;
 internal class InventoryRepo
 {
-    public void ReduceInventoryAmount(InventoryModel[] items)
+    public void ReduceInventoryAmount(List<InventoryModel> items)
     {
         using (var context = new InventoryDbContext())
         {

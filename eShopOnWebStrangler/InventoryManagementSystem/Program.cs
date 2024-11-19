@@ -37,9 +37,9 @@ InventoryMessageService messageService = new(new InventoryDbContext());
 
 Console.WriteLine("Ready");
 
-_ = Task.Run(() => messageService.ReceiveMessage("inventory", "inventoryResponseQueue", "inventoryRequestQueue"));
+messageService.ReceiveMessage("inventory", "inventoryResponseQueue", "inventoryRequestQueue");
 
-_ = Task.Run(() => messageService.UpdateInventoryReceiver("inventory_update", "inventoryUpdateQueue"));
+messageService.UpdateInventoryReceiver("inventory_update", "inventoryUpdateQueue");
 
 Console.ReadLine();
 

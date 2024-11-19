@@ -110,13 +110,25 @@ internal class InventoryMessageService
             var Message = Encoding.UTF8.GetString(body);
             Console.WriteLine($"Received: {Message}");
 
-            InventoryModel[] itemsToReduce;
+            try
+            {
+                List<InventoryModel> itemsToReduce = new(JsonSerializer.Deserialize<InventoryModel[]>(Message));
 
-            itemsToReduce = JsonSerializer.Deserialize<InventoryModel[]>(Message);
+                InventoryRepo inventoryRepo = new();
+                inventoryRepo.ReduceInventoryAmount(itemsToReduce);
 
-            InventoryRepo inventoryRepo = new();
-
-            inventoryRepo.ReduceInventoryAmount(itemsToReduce);
+                latch.Set();
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Failed to deserialize message: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+            }
 
             latch.Set();
         };
