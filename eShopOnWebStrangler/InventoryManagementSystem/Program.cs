@@ -39,5 +39,7 @@ Console.WriteLine("Ready");
 
 _ = Task.Run(() => messageService.ReceiveMessage("inventory", "inventoryResponseQueue", "inventoryRequestQueue"));
 
+_ = Task.Run(() => messageService.UpdateInventoryReceiver("inventory_update", "inventoryUpdateQueue"));
+
 Console.ReadLine();
 

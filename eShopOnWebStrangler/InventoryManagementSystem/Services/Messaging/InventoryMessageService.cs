@@ -86,6 +86,49 @@ internal class InventoryMessageService
         Console.ReadKey();
     }
 
+    public async Task UpdateInventoryReceiver(string routingKey, string queueName = "inventoryUpdateQueue")
+    {
+        var factory = new ConnectionFactory { HostName = "localhost"/*, DispatchConsumersAsync = true*/ };
+
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
+
+        await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+
+        await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        await channel.QueueBindAsync(queue: queueName, exchange: exchangeName, routingKey: routingKey);
+
+        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
+
+        //Console.WriteLine("Waiting for messages");
+
+        var consumer = new AsyncEventingBasicConsumer(channel);
+        var latch = new AutoResetEvent(false);
+        consumer.ReceivedAsync += async (model, ea) =>
+        {
+            var body = ea.Body.ToArray();
+            var Message = Encoding.UTF8.GetString(body);
+            Console.WriteLine($"Received: {Message}");
+
+            InventoryModel[] itemsToReduce;
+
+            itemsToReduce = JsonSerializer.Deserialize<InventoryModel[]>(Message);
+
+            InventoryRepo inventoryRepo = new();
+
+            inventoryRepo.ReduceInventoryAmount(itemsToReduce);
+
+            latch.Set();
+        };
+        //ConsumerReceived;
+
+        await channel.BasicConsumeAsync(queue: queueName,
+                             autoAck: true,
+                             consumer: consumer);
+
+        Console.ReadKey();
+    }
+
     private async Task ProcessMessage(string message, string sendQueueName)
     {
         MessageObject[] messageObjects;

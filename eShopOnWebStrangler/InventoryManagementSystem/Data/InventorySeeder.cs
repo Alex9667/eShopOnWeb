@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using InventoryManagementSystem.Migrations;
-using InventoryManagementSystem.Models;
+﻿using InventoryManagementSystem.Models;
 using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryManagementSystem.Data;
@@ -32,11 +26,10 @@ internal class InventorySeeder
 
         int id = 1;
 
-        Random random = new Random();
 
         while(id < 13)
         {
-            int units = random.Next(20, 50);
+            int units = 500;
             inventoryItems.Add(new InventoryModel(id, units, 0));
 
             id++;

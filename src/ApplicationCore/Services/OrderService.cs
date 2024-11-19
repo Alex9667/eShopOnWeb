@@ -73,6 +73,7 @@ public class OrderService : IOrderService
 
         bool hasEnoughStock = true;
 
+        List<InventoryModel> inventoryUpdateMessage = new List<InventoryModel>();
 
         if (inventoryAnswer != null)
         {
@@ -81,14 +82,13 @@ public class OrderService : IOrderService
 
             foreach (var item in basketItems)
             {
-                var currentItemId = item.CatalogItemId;
-                var currentItemQuantity = item.Quantity;
+                inventoryUpdateMessage.Add(new InventoryModel(item.CatalogItemId, item.Quantity, 0));
 
                 foreach (var inventoryModel in inventoryAmounts)
                 {
-                    if(inventoryModel.ItemId == currentItemId)
+                    if(inventoryModel.ItemId == item.CatalogItemId)
                     {
-                        if(inventoryModel.Units < currentItemQuantity)
+                        if(inventoryModel.Units < item.Quantity)
                         {
                             hasEnoughStock = false;
                         }
@@ -102,6 +102,8 @@ public class OrderService : IOrderService
             var order = new Order(basket.BuyerId, shippingAddress, items);
 
             await _orderRepository.AddAsync(order);
+
+            await _messagingService.SendMessage(JsonSerializer.Serialize(inventoryUpdateMessage), "inventory_update", "inventoryUpdateQueue");
         }
     }
 }
