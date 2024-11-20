@@ -15,7 +15,7 @@
     <PackageReference Include="EntityFramework.Metadata" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" >
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
