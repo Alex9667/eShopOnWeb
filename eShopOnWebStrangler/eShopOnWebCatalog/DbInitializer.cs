@@ -6,10 +6,10 @@ public static class DbInitializer
 {
     public static void Initialize(ApplicationDbContext context)
     {
-        // Ensure the database is created
+        
         context.Database.EnsureCreated();
 
-        // Seed CatalogBrands if none exist
+        
         if (!context.CatalogBrands.Any())
         {
             context.CatalogBrands.AddRange(
@@ -18,7 +18,7 @@ public static class DbInitializer
             );
         }
 
-        // Seed CatalogTypes if none exist
+        
         if (!context.CatalogTypes.Any())
         {
             context.CatalogTypes.AddRange(
@@ -27,7 +27,7 @@ public static class DbInitializer
             );
         }
 
-        // Seed CatalogItems if none exist
+        
         if (!context.CatalogItems.Any())
         {
             context.CatalogItems.AddRange(
