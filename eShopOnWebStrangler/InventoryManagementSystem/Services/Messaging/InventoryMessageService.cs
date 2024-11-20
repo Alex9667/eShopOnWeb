@@ -28,88 +28,120 @@ internal class InventoryMessageService
         this.context = context;
     }
 
-    public void SendMessage(string message, string _routingKey)
+    public async Task SendMessage(string message, string _routingKey, string sendQueueName)
     {
 
-        using var connection = factory.CreateConnection();
-        using var channel = connection.CreateModel();
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
 
-        channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        await channel.QueueDeclareAsync(queue: sendQueueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        await channel.QueueBindAsync(queue: sendQueueName, exchange: exchangeName, routingKey: _routingKey);
 
 
         var body = Encoding.UTF8.GetBytes(message);
 
-        channel.BasicPublish(exchange: exchangeName,
+        await channel.BasicPublishAsync(exchange: exchangeName,
                              routingKey: _routingKey,
-                             basicProperties: null,
                              body: body);
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
 
     //TODO: add cancelation token
-    public async Task ReceiveMessage(string routingKey, string queueName = "inventoryRequestQueue")
+    public async Task ReceiveMessage(string routingKey, string sendQueueName, string queueName = "inventoryRequestQueue")
     {
-        var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
+        var factory = new ConnectionFactory { HostName = "localhost"/*, DispatchConsumersAsync = true*/ };
 
-        using var connection = factory.CreateConnection();
-        using var channel = connection.CreateModel();
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
 
-        channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
 
-        channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: routingKey);
+        await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        await channel.QueueBindAsync(queue: queueName, exchange: exchangeName, routingKey: routingKey);
 
-        channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
-        Console.WriteLine("Waiting for messages");
+        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
+
+        //Console.WriteLine("Waiting for messages");
 
         var consumer = new AsyncEventingBasicConsumer(channel);
         var latch = new AutoResetEvent(false);
-        consumer.Received += async (model, ea) =>
+        consumer.ReceivedAsync += async (model, ea) =>
         {
             var body = ea.Body.ToArray();
             var Message = Encoding.UTF8.GetString(body);
 
             Console.WriteLine($"Received: {Message}");
 
-            ProcessMessage(Message);
+            await ProcessMessage(Message, sendQueueName);
 
             latch.Set();
         };
         //ConsumerReceived;
 
-        channel.BasicConsume(queue: queueName,
+        await channel.BasicConsumeAsync(queue: queueName,
                              autoAck: true,
                              consumer: consumer);
+
+        Console.ReadKey();
     }
 
-    public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
+    public async Task UpdateInventoryReceiver(string routingKey, string queueName = "inventoryUpdateQueue")
     {
-        var body = ea.Body.ToArray();
-        var message = Encoding.UTF8.GetString(body);
-        MessageObject[] messageObjects;
-        List<InventoryModel> units = new();
-        try
-        {
-            messageObjects = JsonSerializer.Deserialize<MessageObject[]>(message);
+        var factory = new ConnectionFactory { HostName = "localhost"/*, DispatchConsumersAsync = true*/ };
 
-            foreach(var messageObject in messageObjects)
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
+
+        await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+
+        await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        await channel.QueueBindAsync(queue: queueName, exchange: exchangeName, routingKey: routingKey);
+
+        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
+
+        //Console.WriteLine("Waiting for messages");
+
+        var consumer = new AsyncEventingBasicConsumer(channel);
+        var latch = new AutoResetEvent(false);
+        consumer.ReceivedAsync += async (model, ea) =>
+        {
+            var body = ea.Body.ToArray();
+            var Message = Encoding.UTF8.GetString(body);
+            Console.WriteLine($"Received: {Message}");
+
+            try
             {
-                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.ItemId));
+                List<InventoryModel> itemsToReduce = new(JsonSerializer.Deserialize<InventoryModel[]>(Message));
+
+                InventoryRepo inventoryRepo = new();
+                inventoryRepo.ReduceInventoryAmount(itemsToReduce);
+
+                latch.Set();
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Failed to deserialize message: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
             }
 
-            var answer = JsonSerializer.Serialize(units);
+            latch.Set();
+        };
+        //ConsumerReceived;
 
-            SendMessage(answer, "catalog");
-        }
-        catch (JsonException ex)
-        {
-            //TODO: send to invalid message queue
-        }
+        await channel.BasicConsumeAsync(queue: queueName,
+                             autoAck: true,
+                             consumer: consumer);
 
-        Console.WriteLine($"Received: {message}");
+        Console.ReadKey();
     }
 
-    private async Task ProcessMessage(string message)
+    private async Task ProcessMessage(string message, string sendQueueName)
     {
         MessageObject[] messageObjects;
         List<InventoryModel> units = new();
@@ -119,12 +151,12 @@ internal class InventoryMessageService
 
             foreach (var messageObject in messageObjects)
             {
-                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.ItemId));
+                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.Id));
             }
 
             var answer = JsonSerializer.Serialize(units);
 
-            SendMessage(answer, "catalog");
+            await SendMessage(answer, "inventory_amount", sendQueueName);
         }
         catch (JsonException ex)
         {
@@ -134,5 +166,5 @@ internal class InventoryMessageService
 }
 public class MessageObject
 {
-    public int ItemId { get; set; }
+    public int Id { get; set; }
 }

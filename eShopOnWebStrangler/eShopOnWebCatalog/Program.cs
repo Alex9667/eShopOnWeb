@@ -8,8 +8,6 @@ using eShopOnWebCatalog.Interfaces;
 using eShopOnWebCatalog.Services;
 using eShopOnWebCatalog.Services.Messaging;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.eShopWeb.PublicApi;
-using Microsoft.OpenApi.Models;
 using MinimalApi.Endpoint.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -76,11 +74,10 @@ using (var scope = app.Services.CreateScope())
 
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
-}
+
 
 app.MapGet("/health", context =>
         context.Response.WriteAsync("My API is healthy!"))

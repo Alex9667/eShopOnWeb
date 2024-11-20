@@ -15,9 +15,11 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 {
     //ConnectionFactory factory;
     IRepository<CatalogItem> _itemRepository;
-    
 
     string exchangeName = "";
+    private CancellationToken _cancellationToken;
+
+    public CancellationToken CancellationToken { get=> _cancellationToken; set => _cancellationToken = value; }
 
     public CatalogMessageService(IRepository<CatalogItem> itemRepository)
     {
@@ -43,20 +45,21 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     //    }
     //}
 
-    public void SendMessage(string message, string _routingKey)
+    public async Task SendMessage(string message, string _routingKey)
     {
-        var factory = new ConnectionFactory {HostName = "localhost" };
-        using var connection = factory.CreateConnection();
-        using var channel = connection.CreateModel();
 
-        channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        var factory = new ConnectionFactory {HostName = "rabbitmq", UserName = "user", Password = "password", Port = 5672};
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
+
+        await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
 
 
         var body = Encoding.UTF8.GetBytes(message);
 
-        channel.BasicPublish(exchange: exchangeName,
+        await channel.BasicPublishAsync(exchange: exchangeName,
                              routingKey: _routingKey,
-                             basicProperties: null,
+                             mandatory: false,
                              body: body);
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
@@ -65,31 +68,31 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     public async Task ReceiveMessage(string routingKey, string queueName)
     {
         
-        var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
+        var factory = new ConnectionFactory { HostName = "rabbitmq", UserName="user", Password="password", Port = 5672, DispatchConsumersAsync = true };
+
     
         
-        using var connection = factory.CreateConnection();
+        using var connection = await factory.CreateConnectionAsync();
         
-        using var channel = connection.CreateModel();
+        using var channel = await connection.CreateChannelAsync();
 
-        channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+        await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
 
-        channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: routingKey);
+        await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        await channel.QueueBindAsync(queue: queueName, exchange: exchangeName, routingKey: routingKey);
 
-        channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
         Console.WriteLine("Waiting for messages");
 
         var consumer = new AsyncEventingBasicConsumer(channel);
 
-        consumer.Received += ConsumerReceived;
-
-        channel.BasicConsume(queue: queueName,
+        consumer.ReceivedAsync += ConsumerReceived;
+        
+        await channel.BasicConsumeAsync(queue: queueName,
                              autoAck: true,
                              consumer: consumer);
-        Thread.Sleep(100);
-       
-
+        CancellationToken.WaitHandle.WaitOne();
+        
     }
 
     public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
@@ -103,12 +106,17 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
             var catalogItemsSpecification = new CatalogItemsSpecification(messageObjects.Select(M => M.Id).ToArray());
             var catalogitems = await _itemRepository.ListAsync(catalogItemsSpecification);
             var answer = JsonSerializer.Serialize(catalogitems);
-            SendMessage(answer, "catalog");
+            await SendMessage(answer, "catalog");
         }
-        catch (JsonException ex)
+        catch(Exception ex)
         {
-            //TODO: send to invalid message queue
+            var a = ex.Message;
         }
+        
+        //catch (JsonException ex)
+        //{
+        //    //TODO: send to invalid message queue
+        //}
 
         Console.WriteLine($"Received: {message}");
     }

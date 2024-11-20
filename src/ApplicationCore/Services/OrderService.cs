@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -46,7 +48,7 @@ public class OrderService : IOrderService
         //var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
 
         var _messagingService = new MessagingService();
-        _messagingService.SendMessage(outIds, "get_catalog","catalogRequestQueue");
+        await _messagingService.SendMessage(outIds, "get_catalog","catalogRequestQueue");
 
         var _messageRevicer = new MessagingServiceRecive();
         var response =  _messageRevicer.ReceiveMessage("catalog", "catalogResponseQueue");
@@ -65,8 +67,57 @@ public class OrderService : IOrderService
             
         }).ToList();
 
-        var order = new Order(basket.BuyerId, shippingAddress, items);
 
-        await _orderRepository.AddAsync(order);
+        await _messagingService.SendMessage(outIds, "inventory", "inventoryRequestQueue");
+        var inventoryAnswer = _messageRevicer.ReceiveMessage("inventory_amount", "inventoryResponseQueue");
+
+        bool hasEnoughStock = true;
+
+        List<InventoryModel> inventoryUpdateMessage = new List<InventoryModel>();
+
+        if (inventoryAnswer != null)
+        {
+            List<InventoryModel> inventoryAmounts = new(JsonSerializer.Deserialize<InventoryModel[]>(await inventoryAnswer));
+            var basketItems = basket.Items;
+
+            foreach (var item in basketItems)
+            {
+                inventoryUpdateMessage.Add(new InventoryModel(item.CatalogItemId, item.Quantity, 0));
+
+                foreach (var inventoryModel in inventoryAmounts)
+                {
+                    if(inventoryModel.ItemId == item.CatalogItemId)
+                    {
+                        if(inventoryModel.Units < item.Quantity)
+                        {
+                            hasEnoughStock = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (hasEnoughStock)
+        {
+            var order = new Order(basket.BuyerId, shippingAddress, items);
+
+            await _orderRepository.AddAsync(order);
+
+            await _messagingService.SendMessage(JsonSerializer.Serialize(inventoryUpdateMessage), "inventory_update", "inventoryUpdateQueue");
+        }
+    }
+}
+
+public class InventoryModel
+{
+    public int ItemId { get; set; }
+    public int Units { get; set; }
+    public int ReservedUnits { get; set; }
+
+    public InventoryModel(int itemId, int units, int reservedUnits)
+    {
+        ItemId = itemId;
+        Units = units;
+        ReservedUnits = reservedUnits;
     }
 }

@@ -1,15 +1,13 @@
-version: '3.4'
-
 services:
   eshopwebmvc:
-    image: ${DOCKER_REGISTRY-}eshopwebmvc
+    # image: ${DOCKER_REGISTRY-}eshopwebmvc
     build:
       context: .
       dockerfile: src/Web/Dockerfile
     depends_on:
       - "sqlserver"
   eshoppublicapi:
-    image: ${DOCKER_REGISTRY-}eshoppublicapi
+    # image: ${DOCKER_REGISTRY-}eshoppublicapi
     build:
       context: .
       dockerfile: src/PublicApi/Dockerfile
@@ -22,4 +20,21 @@ services:
     environment:
       - SA_PASSWORD=@someThingComplicated1234
       - ACCEPT_EULA=Y
+  catalog-service:
+    build:
+      context: .\eShopOnWebStrangler\eShopOnWebCatalog\
+      dockerfile: .\Dockerfile
+    depends_on:
+      - rabbitmq
+      - sqlserver
+    restart: unless-stopped
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672" # Port for RabbitMQ messaging
+      - "15675:15672" # Port for RabbitMQ management UI
 
