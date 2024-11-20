@@ -4,7 +4,7 @@ using eShopOnWebCatalog.CatalogItemEndpoints;
 using eShopOnWebCatalog.CatalogTypeEndpoints;
 using eShopOnWebCatalog.Entities;
 
-namespace Microsoft.eShopWeb.PublicApi;
+namespace eShopOnWebCatalog;
 
 public class MappingProfile : Profile
 {

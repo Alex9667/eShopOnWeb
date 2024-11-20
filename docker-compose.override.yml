@@ -1,20 +1,29 @@
-version: '3.4'
 services:
- eshopwebmvc:
-   environment:
-     - ASPNETCORE_ENVIRONMENT=Docker
-     - ASPNETCORE_URLS=http://+:8080
-   ports:
-     - "5106:8080"
-   volumes:
-     - ~/.aspnet/https:/root/.aspnet/https:ro
-     - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
- eshoppublicapi:
-   environment:
-     - ASPNETCORE_ENVIRONMENT=Docker
-     - ASPNETCORE_URLS=http://+:8080
-   ports:
-     - "5200:8080"
-   volumes:
-     - ~/.aspnet/https:/root/.aspnet/https:ro
-     - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+  eshopwebmvc:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5106:8080"
+    volumes:
+      - ~/.aspnet/https:/root/.aspnet/https:ro
+      - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+  eshoppublicapi:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5200:8080"
+    volumes:
+      - ~/.aspnet/https:/root/.aspnet/https:ro
+      - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+  catalog-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5099:8080"
+  rabbitmq:
+    ports:
+      - "5672:5672" # Port for RabbitMQ messaging
+      - "15675:15672" # Port for RabbitMQ management UI

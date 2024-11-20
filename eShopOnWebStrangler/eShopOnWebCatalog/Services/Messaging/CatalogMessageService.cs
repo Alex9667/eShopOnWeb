@@ -45,7 +45,7 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
 
     public void SendMessage(string message, string _routingKey)
     {
-        var factory = new ConnectionFactory {HostName = "localhost" };
+        var factory = new ConnectionFactory {HostName = "rabbitmq", UserName = "user", Password = "password", Port = 5672};
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
@@ -65,7 +65,7 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     public async Task ReceiveMessage(string routingKey, string queueName)
     {
         
-        var factory = new ConnectionFactory { HostName = "localhost", DispatchConsumersAsync = true };
+        var factory = new ConnectionFactory { HostName = "rabbitmq", UserName="user", Password="password", Port = 5672, DispatchConsumersAsync = true };
     
         
         using var connection = factory.CreateConnection();
