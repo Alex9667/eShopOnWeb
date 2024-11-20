@@ -46,7 +46,7 @@ public class OrderService : IOrderService
         //var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
 
         var _messagingService = new MessagingService();
-        _messagingService.SendMessage(outIds, "get_catalog","catalogRequestQueue");
+        await _messagingService.SendMessage(outIds, "get_catalog","catalogRequestQueue");
 
         var _messageRevicer = new MessagingServiceRecive();
         var response =  _messageRevicer.ReceiveMessage("catalog", "catalogResponseQueue");
