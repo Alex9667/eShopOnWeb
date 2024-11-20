@@ -12,7 +12,7 @@ var serviceProvider = new ServiceCollection()
         options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=Inventory;Trusted_Connection=True;"))
     .BuildServiceProvider();
 
-// Activates the latest migration if it isn't already in use
+
 using (var scope = serviceProvider.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
