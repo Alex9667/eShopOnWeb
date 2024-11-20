@@ -18,6 +18,9 @@ using (var scope = serviceProvider.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
 
     dbContext.Database.Migrate();
+
+    InventorySeeder seeder = new();
+    seeder.SeedDatabase();
 }
 
 using (var context = new InventoryDbContext())
@@ -34,6 +37,9 @@ InventoryMessageService messageService = new(new InventoryDbContext());
 
 Console.WriteLine("Ready");
 
-await messageService.ReceiveMessage("inventory", "inventoryRequestQueue");
+messageService.ReceiveMessage("inventory", "inventoryResponseQueue", "inventoryRequestQueue");
+
+messageService.UpdateInventoryReceiver("inventory_update", "inventoryUpdateQueue");
 
 Console.ReadLine();
+
