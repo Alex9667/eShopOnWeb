@@ -1,5 +1,5 @@
 {
-  "Routes": [
+  "ReRoutes": [
     { //catalog-items endpoints with Get, Post and Put
       "UpstreamHttpMethod": [ "Get", "Post", "Put" ],
       "UpstreamPathTemplate": "/catalog-items/",
@@ -7,8 +7,8 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 44391
+          "Host": "catalog-service",
+          "Port": 8080
         }
       ]
     },
@@ -19,8 +19,8 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 44391
+          "Host": "catalog-service",
+          "Port": 8080
         }
       ]
     },
@@ -31,8 +31,8 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 44391
+          "Host": "catalog-service",
+          "Port": 8080
         }
       ]
     },
@@ -43,13 +43,13 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 44391
+          "Host": "catalog-service",
+          "Port": 8080
         }
       ]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:7471"
+    "BaseUrl": "https://api-gateway:8080"
   }
 }

@@ -21,13 +21,32 @@ services:
       - SA_PASSWORD=@someThingComplicated1234
       - ACCEPT_EULA=Y
   catalog-service:
+    image: eshoponweb-catalog-service
     build:
-      context: .\eShopOnWebStrangler\eShopOnWebCatalog\
-      dockerfile: .\Dockerfile
+      context: .
+      dockerfile: .\eShopOnWebStrangler\eShopOnWebCatalog\Dockerfile
     depends_on:
       - rabbitmq
       - sqlserver
+      - catalog-sql-server
     restart: unless-stopped
+  catalog-sql-server:
+    image: mcr.microsoft.com/mssql/server
+    ports:
+      - "1434:1433"
+    environment:
+      - SA_PASSWORD=@someThingComplicated1234
+      - ACCEPT_EULA=Y
+  # api-gateway:
+  #   image: eshoponweb-api-gateway
+  #   build:
+  #     context: .
+  #     dockerfile: .\eShopOnWebStrangler\APIGateway\Dockerfile
+  #   environment:
+  #     - catalogHost=catalog-service
+  #     - catalogPort=8080
+  #   ports:
+  #     - "5050:8080"
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq

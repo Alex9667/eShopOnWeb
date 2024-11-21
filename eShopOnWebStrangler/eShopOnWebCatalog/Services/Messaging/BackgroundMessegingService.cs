@@ -21,9 +21,7 @@ public class BackgroundMessegingService : IHostedService
         var messegingService = scope.ServiceProvider.GetRequiredService<IMessagingService>();
         messegingService.CancellationToken = cancellationToken;
         messegingService.ReceiveMessage("get_catalog", "catalogRequestQueue");
-        
-        
-
+        Console.WriteLine("Messaging service started");
     }
    
 

@@ -1,4 +1,4 @@
-﻿using eShopOnWebCatalog.Models;
+﻿using eShopOnWebCatalog.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace eShopOnWebCatalog;
@@ -18,11 +18,11 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<CatalogItem>().ToTable("Catalog");
 
-
-        modelBuilder.Entity<CatalogBrand>().HasKey(cb => cb.BrandID);
-        modelBuilder.Entity<CatalogType>().HasKey(ct => ct.TypeID);
-        modelBuilder.Entity<CatalogItem>().HasKey(ci => ci.ItemID);
+        modelBuilder.Entity<CatalogBrand>().HasKey(cb => cb.Id);
+        modelBuilder.Entity<CatalogType>().HasKey(ct => ct.Id);
+        modelBuilder.Entity<CatalogItem>().HasKey(ci => ci.Id);
 
         modelBuilder.Entity<CatalogItem>()
        .Property(ci => ci.Price)

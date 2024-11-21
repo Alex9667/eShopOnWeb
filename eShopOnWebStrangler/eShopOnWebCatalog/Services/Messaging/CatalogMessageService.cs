@@ -10,27 +10,38 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using eShopOnWebCatalog.Interfaces;
 using System.Threading;
+using Microsoft.Extensions.Options;
 
 public class CatalogMessageService : IMessagingService /*IHostedService*/ 
 {
-    //ConnectionFactory factory;
+    ConnectionFactory factory;
     IRepository<CatalogItem> _itemRepository;
+    private readonly RabbitMqSettings _settings;
 
     string exchangeName = "";
     private CancellationToken _cancellationToken;
 
     public CancellationToken CancellationToken { get=> _cancellationToken; set => _cancellationToken = value; }
 
-    public CatalogMessageService(IRepository<CatalogItem> itemRepository)
+    public CatalogMessageService(IRepository<CatalogItem> itemRepository, IOptions<RabbitMqSettings> settings)
     {
-        //factory = new ConnectionFactory
-        //{
-        //    HostName = "localhost"
-        //};
-        exchangeName = "ewebshop";
         _itemRepository = itemRepository;
-
+        _settings = settings.Value;
+        exchangeName = "ewebshop";
+        InitializeFactory();
     }
+
+    private void InitializeFactory()
+    {
+        factory = new ConnectionFactory
+        {
+            HostName = _settings.Hostname,
+            Port = _settings.Port,
+            UserName = _settings.Username,
+            Password = _settings.Password,
+        };
+    }
+
     //private static CatalogMessageService _messagingService = null;
 
     //public static CatalogMessageService messagingService
@@ -48,7 +59,9 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     public async Task SendMessage(string message, string _routingKey)
     {
 
-        var factory = new ConnectionFactory {HostName = "rabbitmq", UserName = "user", Password = "password", Port = 5672};
+        //var factory = new ConnectionFactory { HostName = "rabbitmq", UserName = "user", Password = "password", Port = 5672 };
+        //var factory = new ConnectionFactory { HostName = "localhost" };
+
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
 
@@ -67,11 +80,12 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     //TODO: add cancelation token
     public async Task ReceiveMessage(string routingKey, string queueName)
     {
-        
-        var factory = new ConnectionFactory { HostName = "rabbitmq", UserName="user", Password="password", Port = 5672};
 
-    
-        
+        //var factory = new ConnectionFactory { HostName = "rabbitmq", UserName = "user", Password = "password", Port = 5672 };
+        //var factory = new ConnectionFactory { HostName = "localhost" };
+
+
+
         using var connection = await factory.CreateConnectionAsync();
         
         using var channel = await connection.CreateChannelAsync();
@@ -91,7 +105,9 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
         await channel.BasicConsumeAsync(queue: queueName,
                              autoAck: true,
                              consumer: consumer);
+        Console.WriteLine("Consuming messages");
         CancellationToken.WaitHandle.WaitOne();
+        Console.WriteLine("Messaging service stopped listening");
         
     }
 

@@ -21,9 +21,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:8080
+      - RabbitMq:Hostname=rabbitmq
+      - RabbitMq:Username=user
+      - RabbitMq:Password=password
+      - RabbitMq_Port=5672
     ports:
       - "5099:8080"
-  rabbitmq:
-    ports:
-      - "5672:5672" # Port for RabbitMQ messaging
-      - "15675:15672" # Port for RabbitMQ management UI

@@ -18,20 +18,28 @@ builder.Services.AddEndpoints();
 builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
+builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection("RabbitMq"));
+
 builder.Services.Configure<CatalogSettings>(builder.Configuration);
 
 builder.Services.AddScoped<IMessagingService, CatalogMessageService>();
 builder.Services.AddHostedService<BackgroundMessegingService>();
 
+
 var catalogSettings = builder.Configuration.Get<CatalogSettings>() ?? new CatalogSettings();
 builder.Services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));
 
-var connectionstring = builder.Configuration.GetConnectionString("CatalogConnection");
+var connectionstring = builder.Configuration.GetConnectionString("MonolithCatalogConnection");
 builder.Services.AddDbContext<CatalogContext>(
     options => options.UseSqlServer(connectionstring)
 );
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("LocalCatalogConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("CatalogConnection")));
 
 var configSection = builder.Configuration.GetRequiredSection(BaseUrlConfiguration.CONFIG_NAME);
 builder.Services.Configure<BaseUrlConfiguration>(configSection);
@@ -54,9 +62,9 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var catalogContext = services.GetRequiredService<CatalogContext>();
-        catalogContext.Database.Migrate();
-
+        //var catalogContext = services.GetRequiredService<CatalogContext>();
+        //catalogContext.Database.Migrate();
+        Console.WriteLine($"Seeding database: {builder.Configuration.GetConnectionString("CatalogConnection")}");
         var applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
         applicationDbContext.Database.Migrate();
 
@@ -74,9 +82,11 @@ using (var scope = app.Services.CreateScope())
 
 
 // Configure the HTTP request pipeline.
-
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
+//}
 
 
 app.MapGet("/health", context =>
