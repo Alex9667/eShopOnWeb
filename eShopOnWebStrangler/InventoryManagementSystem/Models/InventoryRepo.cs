@@ -15,7 +15,7 @@ internal class InventoryRepo
         {
             foreach (var item in items)
             {
-                var inventoryItem = context.Inventories.FirstOrDefault(i => i.ItemId == item.ItemId);
+                var inventoryItem = context.Inventories.FirstOrDefault(i => i.CatalogItemId == item.CatalogItemId);
 
                 if(inventoryItem != null)
                 {
