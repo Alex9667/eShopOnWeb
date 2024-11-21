@@ -68,7 +68,7 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     public async Task ReceiveMessage(string routingKey, string queueName)
     {
         
-        var factory = new ConnectionFactory { HostName = "rabbitmq", UserName="user", Password="password", Port = 5672, DispatchConsumersAsync = true };
+        var factory = new ConnectionFactory { HostName = "rabbitmq", UserName="user", Password="password", Port = 5672};
 
     
         
