@@ -5,7 +5,7 @@
 namespace InventoryManagementSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class Inventory : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,7 +16,9 @@ namespace InventoryManagementSystem.Migrations
                 {
                     ItemId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Units = table.Column<int>(type: "int", nullable: false)
+                    CatalogItemId = table.Column<int>(type: "int", nullable: false),
+                    Units = table.Column<int>(type: "int", nullable: false),
+                    ReservedUnits = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
