@@ -12,17 +12,14 @@ internal class InventorySeeder
     }
     public void SeedDatabase()
     {
-        using (_context)
+        if(_context.Inventories.ToList().IsNullOrEmpty())
         {
-            if(_context.Inventories.ToList().IsNullOrEmpty())
+            List<InventoryModel> inventoryItems = getInventoryItems();
+            foreach (var item in inventoryItems)
             {
-                List<InventoryModel> inventoryItems = getInventoryItems();
-                foreach (var item in inventoryItems)
-                {
-                    _context.Inventories.Add(item);
-                }
-                _context.SaveChanges();
+                _context.Inventories.Add(item);
             }
+            _context.SaveChanges();
         }
     }
 

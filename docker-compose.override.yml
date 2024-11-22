@@ -44,7 +44,7 @@ services:
   inventory-sql-server:
     environment:
       - SA_PASSWORD=@someThingComplicated1234
-      - ACCEPT_EULA=Y=Docker
+      - ACCEPT_EULA=Y
     ports:
       - "1435:1433"
   inventory-service:

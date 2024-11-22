@@ -6,6 +6,7 @@ using RabbitMQ.Client.Events;
 using System.Threading;
 using InventoryManagementSystem.Data;
 using InventoryManagementSystem.Models;
+using RabbitMQ.Client.Exceptions;
 
 namespace InventoryManagementSystem.Services.Messaging;
 
@@ -56,8 +57,6 @@ internal class InventoryMessageService
     //TODO: add cancelation token
     public async Task ReceiveMessage(string routingKey, string sendQueueName, string queueName = "inventoryRequestQueue")
     {
-        var factory = new ConnectionFactory { HostName = "localhost"/*, DispatchConsumersAsync = true*/ };
-
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
 
@@ -80,22 +79,19 @@ internal class InventoryMessageService
             Console.WriteLine($"Received: {Message}");
 
             await ProcessMessage(Message, sendQueueName);
-
-            latch.Set();
         };
         //ConsumerReceived;
 
         await channel.BasicConsumeAsync(queue: queueName,
                              autoAck: true,
                              consumer: consumer);
+        Console.WriteLine("ready to recive");
 
-        Console.ReadKey();
+        latch.WaitOne();
     }
 
     public async Task UpdateInventoryReceiver(string routingKey, string queueName = "inventoryUpdateQueue")
     {
-        var factory = new ConnectionFactory { HostName = "localhost"/*, DispatchConsumersAsync = true*/ };
-
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
 
@@ -122,8 +118,6 @@ internal class InventoryMessageService
 
                 InventoryRepo inventoryRepo = new();
                 inventoryRepo.ReduceInventoryAmount(itemsToReduce);
-
-                latch.Set();
             }
             catch (JsonException ex)
             {
@@ -136,7 +130,6 @@ internal class InventoryMessageService
                 Console.WriteLine(ex.StackTrace);
             }
 
-            latch.Set();
         };
         //ConsumerReceived;
 
@@ -144,7 +137,7 @@ internal class InventoryMessageService
                              autoAck: true,
                              consumer: consumer);
 
-        Console.ReadKey();
+        latch.WaitOne();
     }
 
     private async Task ProcessMessage(string message, string sendQueueName)
@@ -157,15 +150,18 @@ internal class InventoryMessageService
 
             foreach (var messageObject in messageObjects)
             {
-                units.Add(context.Inventories.FirstOrDefault(i => i.CatalogItemId == messageObject.Id));
+                var unit = context.Inventories.FirstOrDefault(i => i.CatalogItemId == messageObject.Id);
+                units.Add(unit);
+                Console.WriteLine(unit.Units);
             }
 
             var answer = JsonSerializer.Serialize(units);
 
             await SendMessage(answer, "inventory_amount", sendQueueName);
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             //TODO: send to invalid message queue
         }
     }

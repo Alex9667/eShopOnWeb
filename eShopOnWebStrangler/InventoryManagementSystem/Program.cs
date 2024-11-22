@@ -23,6 +23,7 @@ var serviceProvider = new ServiceCollection()
     .BuildServiceProvider();
 
 
+
 using (var scope = serviceProvider.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
@@ -31,26 +32,28 @@ using (var scope = serviceProvider.CreateScope())
 
     InventorySeeder seeder = new(dbContext);
     seeder.SeedDatabase();
+    var rabbitMqSettings = new RabbitMqSettings();
+    configuration.GetSection("RabbitMq").Bind(rabbitMqSettings);
+    InventoryMessageService messageService = new(dbContext, rabbitMqSettings);
+
+    Console.WriteLine("Ready");
+
+    messageService.ReceiveMessage("inventory", "inventoryResponseQueue", "inventoryRequestQueue");
+
+    messageService.UpdateInventoryReceiver("inventory_update", "inventoryUpdateQueue");
+
+
+    //using (var context = new InventoryDbContext())
+    //{
+    //    var all = context.Inventories.ToList();
+
+    //    foreach (var item in all)
+    //    {
+    //        Console.WriteLine($"ids: {item.ItemId}");
+    //    }
+    //}
+
+    var latch = new AutoResetEvent(false);
+
+    latch.WaitOne();
 }
-
-using (var context = new InventoryDbContext())
-{
-    var all = context.Inventories.ToList();
-
-    foreach (var item in all)
-    {
-        Console.WriteLine($"ids: {item.ItemId}");
-    }
-}
-var rabbitMqSettings = new RabbitMqSettings();
-configuration.GetSection("RabbitMq").Bind(rabbitMqSettings);
-InventoryMessageService messageService = new(new InventoryDbContext(), rabbitMqSettings);
-
-Console.WriteLine("Ready");
-
-messageService.ReceiveMessage("inventory", "inventoryResponseQueue", "inventoryRequestQueue");
-
-messageService.UpdateInventoryReceiver("inventory_update", "inventoryUpdateQueue");
-
-Console.ReadLine();
-
