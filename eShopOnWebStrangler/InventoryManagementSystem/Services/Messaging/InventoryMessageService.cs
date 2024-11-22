@@ -157,7 +157,7 @@ internal class InventoryMessageService
 
             foreach (var messageObject in messageObjects)
             {
-                units.Add(context.Inventories.FirstOrDefault(i => i.ItemId == messageObject.Id));
+                units.Add(context.Inventories.FirstOrDefault(i => i.CatalogItemId == messageObject.Id));
             }
 
             var answer = JsonSerializer.Serialize(units);

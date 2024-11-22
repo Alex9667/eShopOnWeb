@@ -7,13 +7,15 @@ namespace InventoryManagementSystem.Models;
 public class InventoryModel
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int ItemId { get; set; }
+    public int CatalogItemId {  get; set; }
     public int Units { get; set; }
     public int ReservedUnits { get; set; }
 
-    public InventoryModel(int itemId, int units, int reservedUnits)
+    public InventoryModel(int catalogItemId, int units, int reservedUnits)
     {
-        ItemId = itemId;
+        CatalogItemId = catalogItemId;
         Units = units;
         ReservedUnits = reservedUnits;
     }

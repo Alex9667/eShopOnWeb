@@ -126,7 +126,7 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
         }
         catch(Exception ex)
         {
-            var a = ex.Message;
+            Console.WriteLine(ex.Message);
         }
         
         //catch (JsonException ex)

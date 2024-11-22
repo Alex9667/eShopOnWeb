@@ -30,15 +30,15 @@ internal class InventorySeeder
     {
         List<InventoryModel> inventoryItems = new List<InventoryModel>();
 
-        int id = 1;
+        int catalogItemId = 1;
 
 
-        while(id < 13)
+        while(catalogItemId < 13)
         {
             int units = 500;
-            inventoryItems.Add(new InventoryModel(id, units, 0));
+            inventoryItems.Add(new InventoryModel(catalogItemId, units, 0));
 
-            id++;
+            catalogItemId++;
         }
 
         return inventoryItems;
