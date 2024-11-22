@@ -14,18 +14,24 @@ internal class InventoryMessageService
     ConnectionFactory factory;
 
     private InventoryDbContext context;
+    private readonly RabbitMqSettings _settings;
 
     string exchangeName = "";
 
-    public InventoryMessageService(InventoryDbContext context)
+    public InventoryMessageService(InventoryDbContext context, RabbitMqSettings settings)
     {
+        _settings = settings;
         factory = new ConnectionFactory
         {
-            HostName = "localhost"
+            HostName = _settings.Hostname,
+            Port = _settings.Port,
+            UserName = _settings.Username,
+            Password = _settings.Password
         };
         exchangeName = "ewebshop";
 
         this.context = context;
+
     }
 
     public async Task SendMessage(string message, string _routingKey, string sendQueueName)

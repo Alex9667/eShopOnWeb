@@ -6,10 +6,20 @@ using InventoryManagementSystem.Migrations;
 using InventoryManagementSystem.Models;
 using InventoryManagementSystem.Services.Messaging;
 using System.Linq;
+using Microsoft.Extensions.Configuration;
 
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")
+    .AddEnvironmentVariables()
+    .Build();
+var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+Console.WriteLine(env);
+
+var connectionstring = env == "Docker" ? configuration.GetConnectionString("DockerConnection") : configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine("Connectionstring: " + connectionstring);
 var serviceProvider = new ServiceCollection()
     .AddDbContext<InventoryDbContext>(options =>
-        options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=Inventory;Trusted_Connection=True;"))
+        options.UseSqlServer(connectionstring))
     .BuildServiceProvider();
 
 
@@ -19,7 +29,7 @@ using (var scope = serviceProvider.CreateScope())
 
     dbContext.Database.Migrate();
 
-    InventorySeeder seeder = new();
+    InventorySeeder seeder = new(dbContext);
     seeder.SeedDatabase();
 }
 
@@ -32,8 +42,9 @@ using (var context = new InventoryDbContext())
         Console.WriteLine($"ids: {item.ItemId}");
     }
 }
-
-InventoryMessageService messageService = new(new InventoryDbContext());
+var rabbitMqSettings = new RabbitMqSettings();
+configuration.GetSection("RabbitMq").Bind(rabbitMqSettings);
+InventoryMessageService messageService = new(new InventoryDbContext(), rabbitMqSettings);
 
 Console.WriteLine("Ready");
 

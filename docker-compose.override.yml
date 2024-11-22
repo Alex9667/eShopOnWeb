@@ -3,6 +3,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:8080
+      - RabbitMq:Hostname=rabbitmq
+      - RabbitMq:Username=user
+      - RabbitMq:Password=password
+      - RabbitMq:Port=5672
     ports:
       - "5106:8080"
     volumes:
@@ -12,6 +16,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:8080
+      - RabbitMq:Hostname=rabbitmq
+      - RabbitMq:Username=user
+      - RabbitMq:Password=password
+      - RabbitMq:Port=5672
     ports:
       - "5200:8080"
     volumes:
@@ -24,6 +32,25 @@ services:
       - RabbitMq:Hostname=rabbitmq
       - RabbitMq:Username=user
       - RabbitMq:Password=password
-      - RabbitMq_Port=5672
+      - RabbitMq:Port=5672
     ports:
       - "5099:8080"
+  catalog-sql-server:
+    ports:
+      - "1434:1433"
+    environment:
+      - SA_PASSWORD=@someThingComplicated1234
+      - ACCEPT_EULA=Y
+  inventory-sql-server:
+    environment:
+      - SA_PASSWORD=@someThingComplicated1234
+      - ACCEPT_EULA=Y=Docker
+    ports:
+      - "1435:1433"
+  inventory-service:
+    environment:
+      - DOTNET_ENVIRONMENT=Docker
+      - RabbitMq:Hostname=rabbitmq
+      - RabbitMq:Username=user
+      - RabbitMq:Password=password
+      - RabbitMq:Port=5672

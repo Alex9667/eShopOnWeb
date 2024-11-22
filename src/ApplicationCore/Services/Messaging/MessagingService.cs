@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -16,14 +17,19 @@ internal class MessagingService
 {
 
     ConnectionFactory factory;
+    private readonly RabbitMqSettings _settings;
 
     string exchangeName = "";
 
-    public MessagingService() 
-    { 
+    public MessagingService(IOptions<RabbitMqSettings> settings) 
+    {
+        _settings = settings.Value;
         factory = new ConnectionFactory
         {
-            HostName = "localhost"
+            HostName = _settings.Hostname,
+            Port = _settings.Port,
+            UserName = _settings.Username,
+            Password = _settings.Password,
         };
         exchangeName = "ewebshop";
 
@@ -77,23 +83,27 @@ internal class MessagingService
 public class MessagingServiceRecive
 {
     ConnectionFactory factory;
-
+    private readonly RabbitMqSettings _settings;
     string exchangeName = "";
 
     string Message = "";
 
-    public MessagingServiceRecive()
+    public MessagingServiceRecive(IOptions<RabbitMqSettings> settings)
     {
+        _settings = settings.Value;
         factory = new ConnectionFactory
         {
-            HostName = "localhost"
+            HostName = _settings.Hostname,
+            Port = _settings.Port,
+            UserName = _settings.Username,
+            Password = _settings.Password,
         };
         exchangeName = "ewebshop";
 
     }
     public async Task<string> ReceiveMessage(string routingKey, string queueName)
     {
-        var factory = new ConnectionFactory { HostName = "localhost" };
+        //var factory = new ConnectionFactory { HostName = "localhost" };
 
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
@@ -113,6 +123,7 @@ public class MessagingServiceRecive
         {
             var body = ea.Body.ToArray();
             Message = Encoding.UTF8.GetString(body);
+            Console.WriteLine($"Received message: {Message}");
 
             latch.Set();
         };

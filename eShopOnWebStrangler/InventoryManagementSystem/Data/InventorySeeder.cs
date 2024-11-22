@@ -4,18 +4,24 @@ using Microsoft.IdentityModel.Tokens;
 namespace InventoryManagementSystem.Data;
 internal class InventorySeeder
 {
+    private readonly InventoryDbContext _context;
+
+    public InventorySeeder(InventoryDbContext context)
+    {
+        _context = context;
+    }
     public void SeedDatabase()
     {
-        using (var context = new InventoryDbContext())
+        using (_context)
         {
-            if(context.Inventories.ToList().IsNullOrEmpty())
+            if(_context.Inventories.ToList().IsNullOrEmpty())
             {
                 List<InventoryModel> inventoryItems = getInventoryItems();
                 foreach (var item in inventoryItems)
                 {
-                    context.Inventories.Add(item);
+                    _context.Inventories.Add(item);
                 }
-                context.SaveChanges();
+                _context.SaveChanges();
             }
         }
     }

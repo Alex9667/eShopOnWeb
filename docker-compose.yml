@@ -1,6 +1,6 @@
 services:
   eshopwebmvc:
-    # image: ${DOCKER_REGISTRY-}eshopwebmvc
+    image: eshoponweb-eshopwebmvc
     build:
       context: .
       dockerfile: src/Web/Dockerfile
@@ -30,6 +30,14 @@ services:
       - sqlserver
       - catalog-sql-server
     restart: unless-stopped
+  inventory-service:
+    image: eshoponweb-inventory-service
+    build:
+      context: .
+      dockerfile: .\eShopOnWebStrangler\InventoryManagementSystem\Dockerfile
+    depends_on:
+      - inventory-sql-server
+      - rabbitmq
   catalog-sql-server:
     image: mcr.microsoft.com/mssql/server
     ports:
@@ -37,6 +45,8 @@ services:
     environment:
       - SA_PASSWORD=@someThingComplicated1234
       - ACCEPT_EULA=Y
+  inventory-sql-server:
+    image: mcr.microsoft.com/mssql/server
   # api-gateway:
   #   image: eshoponweb-api-gateway
   #   build:

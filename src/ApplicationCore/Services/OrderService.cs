@@ -13,6 +13,7 @@ using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Services.Messaging;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.eShopWeb.ApplicationCore.Services;
 
@@ -22,16 +23,19 @@ public class OrderService : IOrderService
     private readonly IUriComposer _uriComposer;
     private readonly IRepository<Basket> _basketRepository;
     private readonly IRepository<CatalogItem> _itemRepository;
+    private readonly IOptions<RabbitMqSettings> _rabbitMqSettings;
 
     public OrderService(IRepository<Basket> basketRepository,
         IRepository<CatalogItem> itemRepository,
         IRepository<Order> orderRepository,
-        IUriComposer uriComposer)
+        IUriComposer uriComposer,
+        IOptions<RabbitMqSettings> rabbitMqSettings)
     {
         _orderRepository = orderRepository;
         _uriComposer = uriComposer;
         _basketRepository = basketRepository;
         _itemRepository = itemRepository;
+        _rabbitMqSettings = rabbitMqSettings;
     }
 
     public async Task CreateOrderAsync(int basketId, Address shippingAddress)
@@ -47,10 +51,10 @@ public class OrderService : IOrderService
         //var catalogItemsSpecification = new CatalogItemsSpecification(basket.Items.Select(item => item.CatalogItemId).ToArray());
         //var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
 
-        var _messagingService = new MessagingService();
+        var _messagingService = new MessagingService(_rabbitMqSettings);
         await _messagingService.SendMessage(outIds, "get_catalog","catalogRequestQueue");
 
-        var _messageRevicer = new MessagingServiceRecive();
+        var _messageRevicer = new MessagingServiceRecive(_rabbitMqSettings);
         var response =  _messageRevicer.ReceiveMessage("catalog", "catalogResponseQueue");
         var ResponseItems = JsonSerializer.Deserialize<CatalogItemOrdered[]>(await response);
 
