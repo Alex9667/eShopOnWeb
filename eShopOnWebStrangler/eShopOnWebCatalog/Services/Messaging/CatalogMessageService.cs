@@ -42,25 +42,8 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
         };
     }
 
-    //private static CatalogMessageService _messagingService = null;
-
-    //public static CatalogMessageService messagingService
-    //{
-    //    get
-    //    {
-    //        if (_messagingService == null)
-    //        {
-    //            _messagingService = new CatalogMessageService();
-    //        }
-    //        return _messagingService;
-    //    }
-    //}
-
     public async Task SendMessage(string message, string _routingKey)
     {
-
-        //var factory = new ConnectionFactory { HostName = "rabbitmq", UserName = "user", Password = "password", Port = 5672 };
-        //var factory = new ConnectionFactory { HostName = "localhost" };
 
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
@@ -80,11 +63,6 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
     //TODO: add cancelation token
     public async Task ReceiveMessage(string routingKey, string queueName)
     {
-
-        //var factory = new ConnectionFactory { HostName = "rabbitmq", UserName = "user", Password = "password", Port = 5672 };
-        //var factory = new ConnectionFactory { HostName = "localhost" };
-
-
 
         using var connection = await factory.CreateConnectionAsync();
         
@@ -137,18 +115,6 @@ public class CatalogMessageService : IMessagingService /*IHostedService*/
         Console.WriteLine($"Received: {message}");
     }
 
-    //public async Task StartAsync(CancellationToken cancellationToken)
-    //{
-    //    _token = cancellationToken;
-    //    ListenForMesages =  ReceiveMessage("get_catalog");
-    //    await ListenForMesages;
-    //}
-
-    //public Task StopAsync(CancellationToken cancellationToken)
-    //{
-    //    ListenForMesages.Dispose();
-    //    return Task.CompletedTask;
-    //}
 }
 public class MessageObject
 {
