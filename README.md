@@ -29,7 +29,8 @@ Dette viser vores bounded contexts: <br>
 For at 'strangle' monolitten begyndte vi med at isolere en service ad gangen. Vi startede med at isolere koden først da dette havde en lavere kompleksitet en at separere dataet først
 
 # 3. Lagerstyrignssystem
-
+Lagerstyrignssystemet er implementeret som sin egen microservice, som snakker sammen med monolitten, og kan sende lagerstatus på produkter, samt fjerne mængden der er på lager.
+<img src="Documentation\inventoryDoku.png" height="500" width="400"/>
 
 # 4. API Gateway
 Der er implementeret en API gateway i projektet de de enkelte microsevices fungerer som deres egne API'er og klient applikationer alle skal kalde disse API'er fra den samme IP. <br>
