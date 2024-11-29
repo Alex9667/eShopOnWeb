@@ -8,10 +8,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 COPY ./eShopOnWebStrangler/APIGateway .
 COPY ../../../Directory.Packages.props /app/
-#COPY ["src/PublicApi/PublicApi.csproj", "./PublicApi/"]
-#RUN dotnet restore "./PublicApi/PublicApi.csproj"
-#COPY . .
-# WORKDIR "/app"
+
 RUN dotnet restore
 
 RUN dotnet build "./APIGateway.csproj" -c Release -o /app/build

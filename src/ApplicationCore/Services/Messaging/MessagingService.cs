@@ -34,19 +34,6 @@ internal class MessagingService
         exchangeName = "ewebshop";
 
     }
-    //private static MessagingService _messagingService = null;
-
-    //public static MessagingService messagingService
-    //{
-    //    get 
-    //    {
-    //        if (_messagingService == null)
-    //        {
-    //            _messagingService = new MessagingService();
-    //        }
-    //        return _messagingService;
-    //    }
-    //}
 
 
     // TODO: Make routingKeys enums
@@ -69,14 +56,6 @@ internal class MessagingService
         Console.WriteLine($" [x] Sent '{_routingKey}':'{message}'");
     }
 
-    
-
-    //public async Task ConsumerReceived(object sender, BasicDeliverEventArgs ea)
-    //{
-    //    var body = ea.Body.ToArray();
-    //    var message = Encoding.UTF8.GetString(body);
-    //    Console.WriteLine($"Received: {message}");
-    //} 
 
 }
 
@@ -103,8 +82,6 @@ public class MessagingServiceRecive
     }
     public async Task<string> ReceiveMessage(string routingKey, string queueName)
     {
-        //var factory = new ConnectionFactory { HostName = "localhost" };
-
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
 
