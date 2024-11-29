@@ -53,5 +53,5 @@ ELK stack består af Elasticsearch, Logstash og Kibana der tilsammen giver god m
 I dette system har vi implementeret en CI/CD pipeline via github actions. I [workflow](.github\workflows\dotnetcore.yml) filen bygger vi vores solution og kører tests på projektet. 
 
 # Start med Docker
-For at køre systemet i containere skal kommandoen ``docker compose up --build -d`` i et CLI fra roden af projektet
+For at køre systemet i containere skal kommandoen ``docker compose up -d --build`` i et CLI fra roden af projektet
 
